@@ -1,0 +1,107 @@
+import { BaseAgent } from './baseAgent';
+import { AgentMessage, TransportOption } from '@/types/agent';
+
+interface TransportInput {
+  from: string;
+  to: string;
+  date: Date;
+  budget: number;
+  preference: 'public' | 'rental' | 'mixed';
+}
+
+export class TransportAgent extends BaseAgent {
+  constructor() {
+    super('transport');
+  }
+
+  protected handleMessage(message: AgentMessage): void {
+    console.log(`[TransportAgent] Received: ${message.content}`);
+  }
+
+  async process(input: TransportInput): Promise<TransportOption[]> {
+    this.setStatus('thinking');
+    this.sendMessage('coordinator', `Finding transport from ${input.from} to ${input.to}`, 'notification');
+
+    await this.simulateDelay(900);
+
+    const options = this.generateTransportOptions(input);
+    
+    this.setStatus('completed');
+    this.sendMessage('coordinator', `Found ${options.length} transport options`, 'response');
+    this.sendMessage('budget', `cost: ${options[0]?.price || 0}`, 'notification');
+
+    return options;
+  }
+
+  private generateTransportOptions(input: TransportInput): TransportOption[] {
+    const options: TransportOption[] = [];
+    const dateStr = input.date.toLocaleDateString();
+
+    // Flight option
+    if (input.budget > 3000) {
+      options.push({
+        id: 'transport-flight',
+        type: 'flight',
+        from: input.from,
+        to: input.to,
+        duration: '2h 30m',
+        price: 4500 + Math.floor(Math.random() * 2000),
+        departure: '06:00 AM',
+        arrival: '08:30 AM',
+      });
+    }
+
+    // Train option
+    options.push({
+      id: 'transport-train',
+      type: 'train',
+      from: input.from,
+      to: input.to,
+      duration: '8h 15m',
+      price: 1200 + Math.floor(Math.random() * 500),
+      departure: '10:00 PM',
+      arrival: '06:15 AM (+1)',
+    });
+
+    // Bus option
+    options.push({
+      id: 'transport-bus',
+      type: 'bus',
+      from: input.from,
+      to: input.to,
+      duration: '10h 30m',
+      price: 600 + Math.floor(Math.random() * 300),
+      departure: '09:00 PM',
+      arrival: '07:30 AM (+1)',
+    });
+
+    // Rental car option
+    if (input.preference === 'rental' || input.preference === 'mixed') {
+      options.push({
+        id: 'transport-car',
+        type: 'car',
+        from: input.from,
+        to: input.to,
+        duration: '7h 00m',
+        price: 2000 + Math.floor(Math.random() * 1000),
+        departure: 'Flexible',
+        arrival: 'Flexible',
+      });
+    }
+
+    return options
+      .filter(o => o.price <= input.budget * 0.3)
+      .sort((a, b) => {
+        if (input.preference === 'public') {
+          return a.price - b.price;
+        }
+        return parseInt(a.duration) - parseInt(b.duration);
+      });
+  }
+
+  private simulateDelay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+export const transportAgent = new TransportAgent();
