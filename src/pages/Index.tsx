@@ -1,20 +1,31 @@
-import { useAgentSystem } from '@/hooks/useAgentSystem';
+import { useAIAgentSystem } from '@/hooks/useAIAgentSystem';
 import { TravelInputForm } from '@/components/TravelInputForm';
 import { AgentVisualization } from '@/components/AgentVisualization';
 import { TravelPlanDisplay } from '@/components/TravelPlanDisplay';
-import { Compass, Sparkles, Bot, Zap } from 'lucide-react';
+import { Compass, Sparkles, Bot, Zap, Brain } from 'lucide-react';
 import heroAgents from '@/assets/hero-agents.jpg';
+import { Agent, AgentType } from '@/types/agent';
 
 const Index = () => {
   const {
-    agents, 
+    agentStatuses, 
     messages, 
-    isPlanning, 
+    isProcessing, 
     travelPlan, 
     error, 
-    startPlanning, 
-    resetPlanning 
-  } = useAgentSystem();
+    generatePlan, 
+    resetPlan 
+  } = useAIAgentSystem();
+
+  // Convert agent statuses to agent objects for visualization
+  const agents: Agent[] = [
+    { id: 'coordinator', name: 'Coordinator', description: 'AI Orchestrator powered by Gemini', status: agentStatuses.coordinator, icon: '🎯', color: 'primary' },
+    { id: 'budget', name: 'Budget Agent', description: 'AI cost optimizer', status: agentStatuses.budget, icon: '💰', color: 'success' },
+    { id: 'weather', name: 'Weather Agent', description: 'Real-time weather data', status: agentStatuses.weather, icon: '🌤️', color: 'warning' },
+    { id: 'hotel', name: 'Hotel Agent', description: 'AI accommodation finder', status: agentStatuses.hotel, icon: '🏨', color: 'accent' },
+    { id: 'transport', name: 'Transport Agent', description: 'AI transport optimizer', status: agentStatuses.transport, icon: '🚗', color: 'info' },
+    { id: 'itinerary', name: 'Itinerary Agent', description: 'AI trip planner', status: agentStatuses.itinerary, icon: '📋', color: 'secondary' },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,15 +65,15 @@ const Index = () => {
           
           <div className="container mx-auto px-4 text-center relative z-10">
             <div className="inline-flex items-center gap-2 bg-accent/10 text-accent px-4 py-2 rounded-full text-sm font-medium mb-6 animate-fade-in">
-              <Sparkles className="w-4 h-4" />
-              Powered by 7 Autonomous AI Agents
+              <Brain className="w-4 h-4" />
+              Powered by Gemini AI + 6 Autonomous Agents
             </div>
             <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in">
               Your AI Travel Planning
               <span className="gradient-hero bg-clip-text text-transparent"> Dream Team</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in" style={{ animationDelay: '100ms' }}>
-              Watch autonomous agents collaborate in real-time to create your perfect travel itinerary. 
+              Watch Gemini-powered agents collaborate in real-time with Booking.com & Airbnb-style recommendations. 
               Weather-aware, budget-optimized, and fully personalized.
             </p>
             
@@ -91,7 +102,7 @@ const Index = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {travelPlan ? (
-          <TravelPlanDisplay plan={travelPlan} onReset={resetPlanning} />
+          <TravelPlanDisplay plan={travelPlan} onReset={resetPlan} />
         ) : (
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Input Form */}
@@ -101,9 +112,9 @@ const Index = () => {
                   <span className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                     ✈️
                   </span>
-                  Plan Your Trip
+                  Plan Your AI-Powered Trip
                 </h2>
-                <TravelInputForm onSubmit={startPlanning} isLoading={isPlanning} />
+                <TravelInputForm onSubmit={generatePlan} isLoading={isProcessing} />
               </div>
             </div>
 
@@ -127,8 +138,8 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t py-6 mt-12">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>Multi-Agent Travel Planner • AI Project Demo</p>
-          <p className="text-xs mt-1">Using OpenWeatherMap Free Tier • Mock Hotel & Transport Data</p>
+          <p>Multi-Agent Travel Planner • Powered by Gemini AI</p>
+          <p className="text-xs mt-1">Using Lovable AI Gateway • Booking.com/Airbnb-style Recommendations</p>
         </div>
       </footer>
     </div>
