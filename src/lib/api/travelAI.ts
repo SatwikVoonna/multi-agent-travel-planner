@@ -1,8 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { TravelInput, WeatherData } from '@/types/agent';
 
-export interface AITravelRequest {
-  type: 'itinerary' | 'hotels' | 'transport' | 'activities' | 'budget';
+// ============================================================================
+// TYPE DEFINITIONS FOR GROUNDED TRAVEL PLANNING
+// ============================================================================
+
+export interface GroundedTravelRequest {
+  type: 'full-plan' | 'weather';
   destination: string;
   duration: number;
   budget: number;
@@ -14,9 +18,87 @@ export interface AITravelRequest {
     transportMode: string;
     pace: string;
   };
-  weatherData?: WeatherData[];
+  originCity?: string;
 }
 
+export interface GroundedItineraryActivity {
+  name: string;
+  time: string;
+  duration: string;
+  category: string;
+  estimatedCost: number;
+  weatherSuitable: boolean;
+  tips: string;
+}
+
+export interface GroundedDayPlan {
+  day: number;
+  date: string;
+  weather: {
+    condition: string;
+    temperature: number;
+    suitable: boolean;
+  };
+  activities: GroundedItineraryActivity[];
+  meals: {
+    breakfast: { suggestion: string; budget: number };
+    lunch: { suggestion: string; budget: number };
+    dinner: { suggestion: string; budget: number };
+  };
+  dailyCost: number;
+}
+
+export interface GroundedAccommodation {
+  name: string;
+  type: string;
+  pricePerNight: number;
+  totalCost: number;
+  address: string;
+}
+
+export interface GroundedTransport {
+  type: string;
+  from: string;
+  to: string;
+  price: number;
+  duration: string;
+  roundTripCost: number;
+}
+
+export interface GroundedBudgetBreakdown {
+  accommodation: number;
+  transport: number;
+  activities: number;
+  food: number;
+  miscellaneous: number;
+  total: number;
+}
+
+export interface SourceDataInfo {
+  placesDiscovered: number;
+  accommodationsFound: number;
+  weatherSource: string;
+  placesSource: string;
+  locationSource: string;
+  priceNote: string;
+}
+
+export interface GroundedTravelPlan {
+  destination: string;
+  resolvedLocation: { lat: number; lon: number };
+  duration: number;
+  itinerary: GroundedDayPlan[];
+  accommodation: GroundedAccommodation;
+  transport: GroundedTransport;
+  budgetBreakdown: GroundedBudgetBreakdown;
+  budgetStatus: 'approved' | 'warning' | 'exceeded';
+  weatherStatus: 'suitable' | 'partially-suitable' | 'unsuitable';
+  tips: string[];
+  notes: string;
+  sourceData: SourceDataInfo;
+}
+
+// Legacy type exports for backward compatibility
 export interface AIItineraryDay {
   day: number;
   theme: string;
@@ -92,27 +174,6 @@ export interface AITransportResponse {
   recommendation: string;
 }
 
-export interface AIActivity {
-  name: string;
-  type: string;
-  cost: number;
-  duration: string;
-  description: string;
-  location: string;
-  rating: number;
-  weatherDependent: boolean;
-  bestTime: string;
-  tips: string;
-  mustDo: boolean;
-}
-
-export interface AIActivitiesResponse {
-  activities: AIActivity[];
-  freeActivities: string[];
-  hiddenGems: string[];
-  tips: string[];
-}
-
 export interface AIBudgetBreakdown {
   breakdown: {
     accommodation: { allocated: number; percentage: number; tips: string };
@@ -130,100 +191,208 @@ export interface AIBudgetBreakdown {
   adjustments: string[];
 }
 
-export async function fetchAITravelData<T>(request: AITravelRequest): Promise<T> {
+// ============================================================================
+// API FUNCTIONS
+// ============================================================================
+
+/**
+ * Fetch a complete grounded travel plan
+ * This is the main entry point for the new location-aware planning
+ */
+export async function fetchGroundedTravelPlan(input: TravelInput): Promise<GroundedTravelPlan> {
+  const duration = input.startDate && input.endDate 
+    ? Math.ceil((input.endDate.getTime() - input.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    : 3;
+
+  const request: GroundedTravelRequest = {
+    type: 'full-plan',
+    destination: input.destination,
+    duration,
+    budget: input.budget,
+    currency: input.currency,
+    travelers: input.travelers,
+    preferences: input.preferences,
+    originCity: 'Delhi' // Can be made configurable
+  };
+
   const { data, error } = await supabase.functions.invoke('ai-travel-planner', {
     body: request,
   });
 
   if (error) {
-    console.error('AI Travel API error:', error);
-    throw new Error(error.message || 'Failed to fetch AI travel data');
+    console.error('Grounded Travel API error:', error);
+    throw new Error(error.message || 'Failed to fetch travel plan');
   }
 
   if (!data.success) {
-    throw new Error(data.error || 'AI request failed');
+    throw new Error(data.error || 'Travel planning failed');
   }
 
-  return data.data as T;
+  return data.data as GroundedTravelPlan;
 }
 
-export async function getAIItinerary(input: TravelInput, weatherData?: WeatherData[]): Promise<AIItineraryResponse> {
-  const duration = input.startDate && input.endDate 
-    ? Math.ceil((input.endDate.getTime() - input.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    : 3;
+/**
+ * Convert grounded plan to legacy format for UI compatibility
+ */
+export function convertToLegacyFormat(plan: GroundedTravelPlan): {
+  itinerary: AIItineraryResponse;
+  hotels: AIHotelsResponse;
+  transport: AITransportResponse;
+  budget: AIBudgetBreakdown;
+} {
+  // Convert itinerary
+  const itinerary: AIItineraryResponse = {
+    days: plan.itinerary.map(day => ({
+      day: day.day,
+      theme: `Day ${day.day} - ${day.weather.condition}`,
+      activities: day.activities.map(act => ({
+        name: act.name,
+        type: act.category,
+        duration: act.duration,
+        cost: act.estimatedCost,
+        description: act.tips,
+        location: plan.destination,
+        weatherDependent: !act.weatherSuitable,
+        bestTime: act.time,
+        tips: act.tips
+      })),
+      meals: day.meals,
+      totalCost: day.dailyCost
+    })),
+    totalTripCost: plan.budgetBreakdown.total,
+    tips: plan.tips
+  };
 
-  return fetchAITravelData<AIItineraryResponse>({
-    type: 'itinerary',
-    destination: input.destination,
-    duration,
-    budget: input.budget,
-    currency: input.currency,
-    travelers: input.travelers,
-    preferences: input.preferences,
-    weatherData,
-  });
+  // Convert accommodation to hotel format
+  const hotels: AIHotelsResponse = {
+    hotels: [{
+      name: plan.accommodation.name,
+      type: plan.accommodation.type,
+      rating: 4.0,
+      pricePerNight: plan.accommodation.pricePerNight,
+      totalPrice: plan.accommodation.totalCost,
+      location: plan.accommodation.address,
+      distanceToCenter: 'Central location',
+      amenities: ['WiFi', 'AC', 'TV'],
+      highlights: ['Good value', 'Central location'],
+      bookingPlatform: 'Direct booking',
+      valueScore: 8.0,
+      category: 'mid-range'
+    }],
+    recommendation: `${plan.accommodation.name} - ₹${plan.accommodation.pricePerNight}/night`,
+    tips: ['Book in advance for better rates']
+  };
+
+  // Convert transport
+  const transport: AITransportResponse = {
+    options: [{
+      type: plan.transport.type,
+      from: plan.transport.from,
+      to: plan.transport.to,
+      duration: plan.transport.duration,
+      price: plan.transport.price,
+      carrier: 'Various operators',
+      class: 'Standard',
+      departure: 'Flexible',
+      arrival: 'Varies',
+      frequency: 'Daily',
+      bookingPlatform: 'MakeMyTrip/RedBus/IRCTC',
+      pros: ['Convenient', 'Multiple options'],
+      cons: ['Book early for best prices']
+    }],
+    localTransport: {
+      options: ['Auto', 'Taxi', 'Local bus'],
+      dailyCost: 500,
+      tips: ['Negotiate rates before boarding autos']
+    },
+    recommendation: `${plan.transport.type} - ₹${plan.transport.price} one way`
+  };
+
+  // Convert budget breakdown
+  const budget: AIBudgetBreakdown = {
+    breakdown: {
+      accommodation: { 
+        allocated: plan.budgetBreakdown.accommodation, 
+        percentage: Math.round((plan.budgetBreakdown.accommodation / plan.budgetBreakdown.total) * 100),
+        tips: 'Book directly for better rates'
+      },
+      transport: { 
+        allocated: plan.budgetBreakdown.transport, 
+        percentage: Math.round((plan.budgetBreakdown.transport / plan.budgetBreakdown.total) * 100),
+        tips: 'Book trains 2-3 weeks in advance'
+      },
+      activities: { 
+        allocated: plan.budgetBreakdown.activities, 
+        percentage: Math.round((plan.budgetBreakdown.activities / plan.budgetBreakdown.total) * 100),
+        tips: 'Many attractions have free entry'
+      },
+      food: { 
+        allocated: plan.budgetBreakdown.food, 
+        percentage: Math.round((plan.budgetBreakdown.food / plan.budgetBreakdown.total) * 100),
+        tips: 'Try local street food for authentic experience'
+      },
+      miscellaneous: { 
+        allocated: plan.budgetBreakdown.miscellaneous, 
+        percentage: Math.round((plan.budgetBreakdown.miscellaneous / plan.budgetBreakdown.total) * 100),
+        tips: 'Keep buffer for unexpected expenses'
+      }
+    },
+    totalAllocated: plan.budgetBreakdown.total,
+    dailyBudget: Math.round(plan.budgetBreakdown.total / plan.duration),
+    perPersonDaily: Math.round(plan.budgetBreakdown.total / plan.duration),
+    savingTips: plan.tips,
+    splurgeWorthy: ['Local experiences', 'Good food'],
+    status: plan.budgetStatus === 'approved' ? 'within_budget' : plan.budgetStatus === 'warning' ? 'tight' : 'over_budget',
+    adjustments: plan.budgetStatus === 'exceeded' ? ['Consider budget accommodation', 'Use public transport'] : []
+  };
+
+  return { itinerary, hotels, transport, budget };
+}
+
+// ============================================================================
+// LEGACY API FUNCTIONS (for backward compatibility)
+// ============================================================================
+
+export async function getAIItinerary(input: TravelInput, weatherData?: WeatherData[]): Promise<AIItineraryResponse> {
+  try {
+    const plan = await fetchGroundedTravelPlan(input);
+    const { itinerary } = convertToLegacyFormat(plan);
+    return itinerary;
+  } catch (error) {
+    console.error('AI Itinerary error:', error);
+    throw error;
+  }
 }
 
 export async function getAIHotels(input: TravelInput): Promise<AIHotelsResponse> {
-  const duration = input.startDate && input.endDate 
-    ? Math.ceil((input.endDate.getTime() - input.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    : 3;
-
-  return fetchAITravelData<AIHotelsResponse>({
-    type: 'hotels',
-    destination: input.destination,
-    duration,
-    budget: input.budget,
-    currency: input.currency,
-    travelers: input.travelers,
-    preferences: input.preferences,
-  });
+  try {
+    const plan = await fetchGroundedTravelPlan(input);
+    const { hotels } = convertToLegacyFormat(plan);
+    return hotels;
+  } catch (error) {
+    console.error('AI Hotels error:', error);
+    throw error;
+  }
 }
 
 export async function getAITransport(input: TravelInput): Promise<AITransportResponse> {
-  const duration = input.startDate && input.endDate 
-    ? Math.ceil((input.endDate.getTime() - input.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    : 3;
-
-  return fetchAITravelData<AITransportResponse>({
-    type: 'transport',
-    destination: input.destination,
-    duration,
-    budget: input.budget,
-    currency: input.currency,
-    travelers: input.travelers,
-    preferences: input.preferences,
-  });
-}
-
-export async function getAIActivities(input: TravelInput): Promise<AIActivitiesResponse> {
-  const duration = input.startDate && input.endDate 
-    ? Math.ceil((input.endDate.getTime() - input.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    : 3;
-
-  return fetchAITravelData<AIActivitiesResponse>({
-    type: 'activities',
-    destination: input.destination,
-    duration,
-    budget: input.budget,
-    currency: input.currency,
-    travelers: input.travelers,
-    preferences: input.preferences,
-  });
+  try {
+    const plan = await fetchGroundedTravelPlan(input);
+    const { transport } = convertToLegacyFormat(plan);
+    return transport;
+  } catch (error) {
+    console.error('AI Transport error:', error);
+    throw error;
+  }
 }
 
 export async function getAIBudgetAnalysis(input: TravelInput): Promise<AIBudgetBreakdown> {
-  const duration = input.startDate && input.endDate 
-    ? Math.ceil((input.endDate.getTime() - input.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    : 3;
-
-  return fetchAITravelData<AIBudgetBreakdown>({
-    type: 'budget',
-    destination: input.destination,
-    duration,
-    budget: input.budget,
-    currency: input.currency,
-    travelers: input.travelers,
-    preferences: input.preferences,
-  });
+  try {
+    const plan = await fetchGroundedTravelPlan(input);
+    const { budget } = convertToLegacyFormat(plan);
+    return budget;
+  } catch (error) {
+    console.error('AI Budget error:', error);
+    throw error;
+  }
 }
