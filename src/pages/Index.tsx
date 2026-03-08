@@ -53,6 +53,13 @@ const Index = () => {
                 <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
                 Agents Online
               </span>
+              <button
+                onClick={toggleTheme}
+                className="w-9 h-9 rounded-lg border bg-card flex items-center justify-center hover:bg-muted transition-colors"
+                aria-label="Toggle theme"
+              >
+                {theme === 'light' ? <Moon className="w-4 h-4 text-foreground" /> : <Sun className="w-4 h-4 text-foreground" />}
+              </button>
             </div>
           </div>
         </div>
