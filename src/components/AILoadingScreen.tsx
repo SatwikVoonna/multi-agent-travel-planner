@@ -46,24 +46,33 @@ export function AILoadingScreen({ isVisible }: AILoadingScreenProps) {
   const [progress, setProgress] = useState(0);
   const [activeAgents, setActiveAgents] = useState<boolean[]>(new Array(agentActivities.length).fill(false));
 
-  // Generate stable random positions once per mount
-  const iconPositions = useMemo(() =>
-    floatingIcons.map(() => ({
-      left: Math.random() * 80 + 5,
-      top: Math.random() * 80 + 5,
-      driftX1: (Math.random() - 0.5) * 300,
-      driftX2: (Math.random() - 0.5) * 250,
-      driftX3: (Math.random() - 0.5) * 350,
-      driftY1: (Math.random() - 0.5) * 250,
-      driftY2: (Math.random() - 0.5) * 300,
-      driftY3: (Math.random() - 0.5) * 200,
-      rotate1: (Math.random() - 0.5) * 30,
-      rotate2: (Math.random() - 0.5) * 25,
-      duration: 10 + Math.random() * 8,
-      delay: Math.random() * 2,
-      size: 28 + Math.random() * 18,
-    })),
-  []);
+  // Evenly distribute icons in a grid pattern with jitter
+  const iconPositions = useMemo(() => {
+    const cols = 4;
+    const rows = Math.ceil(floatingIcons.length / cols);
+    return floatingIcons.map((_, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cellW = 80 / cols;
+      const cellH = 80 / rows;
+      return {
+        left: 5 + col * cellW + Math.random() * cellW * 0.6,
+        top: 5 + row * cellH + Math.random() * cellH * 0.6,
+        driftX1: (Math.random() - 0.5) * 300,
+        driftX2: (Math.random() - 0.5) * 250,
+        driftX3: (Math.random() - 0.5) * 350,
+        driftY1: (Math.random() - 0.5) * 250,
+        driftY2: (Math.random() - 0.5) * 300,
+        driftY3: (Math.random() - 0.5) * 200,
+        spin1: 45 + Math.random() * 90,
+        spin2: -(30 + Math.random() * 60),
+        spin3: 20 + Math.random() * 70,
+        duration: 10 + Math.random() * 8,
+        delay: Math.random() * 2,
+        size: 30 + Math.random() * 16,
+      };
+    });
+  }, []);
 
   useEffect(() => {
     if (!isVisible) return;

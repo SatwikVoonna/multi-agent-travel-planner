@@ -56,13 +56,13 @@ export function AgentCard({ agent, isActive }: AgentCardProps) {
       </div>
 
       {/* Agent icon and name */}
-      <div className="flex items-center gap-3 mb-2">
-        <span className="text-2xl">{agent.icon}</span>
-        <div>
-          <h3 className="font-display font-semibold text-sm text-foreground">
+      <div className="flex items-start gap-3 mb-2">
+        <span className="text-2xl shrink-0">{agent.icon}</span>
+        <div className="min-w-0">
+          <h3 className="font-display font-semibold text-sm text-foreground leading-tight">
             {agent.name}
           </h3>
-          <p className="text-xs text-muted-foreground">{agent.description}</p>
+          <p className="text-xs text-muted-foreground leading-tight mt-0.5 break-words">{agent.description}</p>
         </div>
       </div>
 
