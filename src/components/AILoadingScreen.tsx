@@ -130,8 +130,8 @@ export function AILoadingScreen({ isVisible }: AILoadingScreenProps) {
                   animate={{
                     x: [0, p.driftX1, p.driftX2, p.driftX3, 0],
                     y: [0, p.driftY1, p.driftY2, p.driftY3, 0],
-                    rotate: [0, p.spin1, p.spin2, p.spin3, 0],
-                    opacity: [0.18, 0.3, 0.18, 0.28, 0.18],
+                    rotate: [30, p.spin1 + 90, p.spin2 + 180, p.spin3 + 270, 30],
+                    opacity: [0.18, 0.45, 0.25, 0.55, 0.18],
                   }}
                   transition={{
                     duration: p.duration,
