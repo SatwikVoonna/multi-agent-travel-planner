@@ -9,6 +9,7 @@ import { Agent, AgentType } from '@/types/agent';
 import { useTheme } from '@/hooks/useTheme';
 
 const Index = () => {
+  const { theme, toggleTheme } = useTheme();
   const {
     agentStatuses, 
     messages, 
