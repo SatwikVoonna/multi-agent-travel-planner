@@ -1,4 +1,4 @@
-import { TravelPlan, DayPlan } from '@/types/agent';
+import { TravelPlan, DayPlan, Activity, MealRecommendation, BudgetBreakdown, AgentDecisions } from '@/types/agent';
 import { cn } from '@/lib/utils';
 import { 
   CheckCircle2, 
@@ -12,7 +12,15 @@ import {
   Plane,
   Calendar,
   Wallet,
-  Clock
+  Clock,
+  Utensils,
+  Navigation,
+  Brain,
+  TrendingDown,
+  Lightbulb,
+  Train,
+  Bus,
+  Car
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -33,10 +41,13 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
     }
   };
 
-  const getWeatherIcon = (condition: string) => {
-    if (condition.toLowerCase().includes('rain')) return <CloudRain className="w-4 h-4" />;
-    if (condition.toLowerCase().includes('cloud')) return <Cloud className="w-4 h-4" />;
-    return <Sun className="w-4 h-4 text-warning" />;
+  const getTransportIcon = (type: string) => {
+    switch (type) {
+      case 'flight': return <Plane className="w-5 h-5" />;
+      case 'train': return <Train className="w-5 h-5" />;
+      case 'bus': return <Bus className="w-5 h-5" />;
+      default: return <Car className="w-5 h-5" />;
+    }
   };
 
   return (
@@ -119,16 +130,65 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
         </div>
       </div>
 
+      {/* Budget Breakdown */}
+      {plan.budgetBreakdown && (
+        <div className="bg-card rounded-xl p-5 border">
+          <h3 className="font-display font-semibold mb-4 flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-primary" />
+            Cost Breakdown
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              { label: 'Accommodation', value: plan.budgetBreakdown.accommodation, icon: '🏨' },
+              { label: 'Transport', value: plan.budgetBreakdown.transport, icon: '✈️' },
+              { label: 'Activities', value: plan.budgetBreakdown.activities, icon: '🎯' },
+              { label: 'Food', value: plan.budgetBreakdown.food, icon: '🍽️' },
+              { label: 'Local Transport', value: plan.budgetBreakdown.localTransport || 0, icon: '🚗' },
+              { label: 'Miscellaneous', value: plan.budgetBreakdown.miscellaneous, icon: '📦' },
+            ].map(item => (
+              <div key={item.label} className="bg-muted/50 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                  <span>{item.icon}</span>
+                  {item.label}
+                </div>
+                <p className="font-semibold">₹{item.value.toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Budget Optimization */}
+      {plan.budgetOptimization?.applied && (
+        <div className="bg-success/5 border border-success/20 rounded-xl p-5">
+          <h3 className="font-display font-semibold mb-3 flex items-center gap-2 text-success">
+            <TrendingDown className="w-5 h-5" />
+            Budget Optimization Applied — Saved ₹{plan.budgetOptimization.saved.toLocaleString()}
+          </h3>
+          <ul className="space-y-1">
+            {plan.budgetOptimization.changes.map((change, i) => (
+              <li key={i} className="text-sm text-muted-foreground flex items-center gap-2">
+                <CheckCircle2 className="w-3 h-3 text-success flex-shrink-0" />
+                {change}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Hotel & Transport */}
       <div className="grid grid-cols-2 gap-4">
         {plan.hotel && (
           <div className="bg-card rounded-xl p-5 border">
             <div className="flex items-center gap-2 mb-3">
-              <Building2 className="w-5 h-5 text-agent-hotel" />
+              <Building2 className="w-5 h-5 text-accent" />
               <h3 className="font-display font-semibold">Accommodation</h3>
             </div>
             <p className="font-medium text-foreground">{plan.hotel.name}</p>
             <p className="text-sm text-muted-foreground">{plan.hotel.location}</p>
+            {plan.hotel.type && (
+              <span className="text-xs bg-secondary px-2 py-0.5 rounded capitalize">{plan.hotel.type}</span>
+            )}
             <div className="flex items-center gap-2 mt-2">
               <span className="text-warning">{'★'.repeat(Math.floor(plan.hotel.rating))}</span>
               <span className="text-sm text-muted-foreground">{plan.hotel.rating}/5</span>
@@ -136,26 +196,44 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
             <p className="mt-2 font-semibold">
               ₹{plan.hotel.pricePerNight.toLocaleString()}/night
             </p>
+            {plan.hotel.totalCost && (
+              <p className="text-xs text-muted-foreground">
+                Total: ₹{plan.hotel.totalCost.toLocaleString()} ({plan.duration - 1} nights)
+              </p>
+            )}
             <div className="flex flex-wrap gap-1 mt-2">
-              {plan.hotel.amenities.slice(0, 4).map((amenity) => (
+              {plan.hotel.amenities.slice(0, 5).map((amenity) => (
                 <span key={amenity} className="text-xs bg-secondary px-2 py-0.5 rounded">
                   {amenity}
                 </span>
               ))}
             </div>
+            {plan.hotel.alternatives && plan.hotel.alternatives.length > 0 && (
+              <div className="mt-3 pt-3 border-t">
+                <p className="text-xs text-muted-foreground mb-1">Alternatives:</p>
+                {plan.hotel.alternatives.map((alt, i) => (
+                  <p key={i} className="text-xs text-muted-foreground">
+                    {alt.name} — ₹{alt.pricePerNight.toLocaleString()}/night (★{alt.rating})
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {plan.transport && (
           <div className="bg-card rounded-xl p-5 border">
             <div className="flex items-center gap-2 mb-3">
-              <Plane className="w-5 h-5 text-agent-transport" />
+              {getTransportIcon(plan.transport.type)}
               <h3 className="font-display font-semibold">Transport</h3>
             </div>
             <p className="font-medium text-foreground capitalize">{plan.transport.type}</p>
             <p className="text-sm text-muted-foreground">
               {plan.transport.from} → {plan.transport.to}
             </p>
+            {plan.transport.carrier && (
+              <p className="text-xs text-muted-foreground mt-1">{plan.transport.carrier}</p>
+            )}
             <div className="flex items-center gap-4 mt-2 text-sm">
               <span className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
@@ -165,9 +243,11 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
             <p className="mt-2 font-semibold">
               ₹{plan.transport.price.toLocaleString()} (one way)
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Departs: {plan.transport.departure} • Arrives: {plan.transport.arrival}
-            </p>
+            {plan.transport.roundTripCost && (
+              <p className="text-xs text-muted-foreground">
+                Round trip: ₹{plan.transport.roundTripCost.toLocaleString()}
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -186,14 +266,70 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
         </div>
       </div>
 
+      {/* Agent Decision Summary */}
+      {plan.agentDecisions && (
+        <div className="bg-card rounded-xl p-5 border">
+          <h3 className="font-display font-semibold mb-4 flex items-center gap-2">
+            <Brain className="w-5 h-5 text-primary" />
+            Agent Decision Summary
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {Object.entries(plan.agentDecisions).map(([agent, decision]) => (
+              decision ? (
+                <div key={agent} className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-sm font-medium capitalize mb-1">
+                    {agent.replace('_', ' ')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{decision}</p>
+                </div>
+              ) : null
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tips */}
+      {plan.tips && plan.tips.length > 0 && (
+        <div className="bg-accent/5 border border-accent/20 rounded-xl p-5">
+          <h3 className="font-display font-semibold mb-3 flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-accent" />
+            Travel Tips
+          </h3>
+          <ul className="space-y-2">
+            {plan.tips.map((tip, i) => (
+              <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                <span className="text-accent font-bold mt-0.5">•</span>
+                {tip}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Summary Footer */}
       <div className="bg-muted rounded-xl p-4 text-center">
         <p className="text-sm text-muted-foreground">
           Plan generated at {plan.generatedAt.toLocaleString()}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          Powered by Multi-Agent AI System • Weather data may vary
+          Powered by Multi-Agent AI System • Gemini 2.5 Flash • Prices are estimates
         </p>
+      </div>
+    </div>
+  );
+}
+
+function MealCard({ meal, type }: { meal: MealRecommendation; type: 'lunch' | 'dinner' }) {
+  return (
+    <div className="flex items-start gap-3 bg-accent/5 rounded-lg p-3">
+      <Utensils className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+      <div className="flex-1">
+        <div className="flex items-center justify-between">
+          <p className="font-medium text-sm">{meal.name}</p>
+          <span className="text-xs text-muted-foreground">{meal.timeSlot}</span>
+        </div>
+        <p className="text-xs text-muted-foreground">{meal.cuisine} • {meal.famousFor}</p>
+        <p className="text-xs font-medium mt-1">₹{meal.costPerPerson.toLocaleString()}/person</p>
       </div>
     </div>
   );
@@ -208,7 +344,7 @@ function DayCard({ day }: { day: DayPlan }) {
             {day.day}
           </span>
           <div>
-            <p className="font-semibold">Day {day.day}</p>
+            <p className="font-semibold">Day {day.day}{day.theme ? ` — ${day.theme}` : ''}</p>
             <p className="text-xs text-muted-foreground">{day.date}</p>
           </div>
         </div>
@@ -225,34 +361,73 @@ function DayCard({ day }: { day: DayPlan }) {
               ? 'bg-success/20 text-success' 
               : 'bg-warning/20 text-warning'
           )}>
-            {day.weather.suitable ? 'Good' : 'Check weather'}
+            {day.weather.suitable ? 'Good' : 'Indoor preferred'}
           </span>
         </div>
       </div>
+
+      {day.weather.recommendation && (
+        <div className="px-5 py-2 bg-muted/30 text-xs text-muted-foreground flex items-center gap-1">
+          <Sun className="w-3 h-3" />
+          {day.weather.recommendation}
+        </div>
+      )}
       
       <div className="p-5">
         <div className="space-y-3">
           {day.activities.map((activity, index) => (
-            <div key={activity.id} className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-medium text-accent flex-shrink-0 mt-0.5">
-                {index + 1}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium">{activity.name}</p>
-                  <span className="text-sm text-muted-foreground">
-                    ₹{activity.cost.toLocaleString()}
-                  </span>
+            <div key={activity.id}>
+              {/* Travel indicator */}
+              {activity.travelFromPrevious && activity.travelFromPrevious.travelTime && index > 0 && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 ml-9">
+                  <Navigation className="w-3 h-3" />
+                  {activity.travelFromPrevious.distanceKm}km • {activity.travelFromPrevious.travelTime} by {activity.travelFromPrevious.mode}
                 </div>
-                <p className="text-sm text-muted-foreground">{activity.description}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs bg-secondary px-2 py-0.5 rounded">{activity.type}</span>
-                  <span className="text-xs text-muted-foreground">{activity.duration}</span>
+              )}
+              <div className="flex items-start gap-3">
+                <div className="flex flex-col items-center flex-shrink-0">
+                  {activity.timeSlot && (
+                    <span className="text-xs text-muted-foreground mb-1 w-16 text-right">{activity.timeSlot}</span>
+                  )}
+                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-medium text-accent">
+                    {index + 1}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">{activity.name}</p>
+                    <span className="text-sm font-semibold text-foreground">
+                      {activity.cost === 0 ? 'Free' : `₹${activity.cost.toLocaleString()}`}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{activity.description}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs bg-secondary px-2 py-0.5 rounded">{activity.type}</span>
+                    <span className="text-xs text-muted-foreground">{activity.duration}</span>
+                  </div>
+                  {activity.tips && (
+                    <p className="text-xs text-accent mt-1 flex items-center gap-1">
+                      <Lightbulb className="w-3 h-3" />
+                      {activity.tips}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Meals */}
+        {(day.meals?.lunch || day.meals?.dinner) && (
+          <div className="mt-4 pt-3 border-t space-y-2">
+            <p className="text-sm font-medium flex items-center gap-1 mb-2">
+              <Utensils className="w-4 h-4 text-accent" />
+              Dining
+            </p>
+            {day.meals.lunch && <MealCard meal={day.meals.lunch} type="lunch" />}
+            {day.meals.dinner && <MealCard meal={day.meals.dinner} type="dinner" />}
+          </div>
+        )}
         
         <div className="mt-4 pt-3 border-t flex justify-between text-sm">
           <span className="text-muted-foreground">Day Total</span>

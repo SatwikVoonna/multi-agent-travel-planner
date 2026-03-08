@@ -45,7 +45,7 @@ interface WeatherDay {
 }
 
 // ============================================================================
-// NOMINATIM – Location Resolution (FREE, no key)
+// NOMINATIM – Location Resolution
 // ============================================================================
 
 async function resolveLocation(destination: string): Promise<LocationData | null> {
@@ -73,7 +73,7 @@ async function resolveLocation(destination: string): Promise<LocationData | null
 }
 
 // ============================================================================
-// OPENWEATHERMAP – Real weather (FREE tier)
+// OPENWEATHERMAP – Real weather
 // ============================================================================
 
 function weatherIcon(c: string): string {
@@ -107,14 +107,14 @@ function simulatedWeather(days: number): WeatherDay[] {
   const out: WeatherDay[] = [];
   for (let i = 0; i < days; i++) {
     const d = new Date(); d.setDate(d.getDate() + i);
-    const cond = ['Clear', 'Clouds', 'Clear'][i % 3];
-    out.push({ date: d.toISOString().split('T')[0], temperature: 28 + Math.floor(Math.random() * 7), condition: cond, icon: weatherIcon(cond), humidity: 55, windSpeed: 12, suitable: true });
+    const cond = ['Clear', 'Clouds', 'Clear', 'Rain'][i % 4];
+    out.push({ date: d.toISOString().split('T')[0], temperature: 28 + Math.floor(Math.random() * 7), condition: cond, icon: weatherIcon(cond), humidity: 55 + Math.floor(Math.random() * 20), windSpeed: 10 + Math.floor(Math.random() * 10), suitable: cond !== 'Rain' });
   }
   return out;
 }
 
 // ============================================================================
-// GEMINI AI GATEWAY – Used for reasoning over real data
+// LOVABLE AI GATEWAY
 // ============================================================================
 
 async function callGemini(systemPrompt: string, userPrompt: string): Promise<string> {
@@ -125,12 +125,13 @@ async function callGemini(systemPrompt: string, userPrompt: string): Promise<str
     method: 'POST',
     headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'google/gemini-3-flash-preview',
+      model: 'google/gemini-2.5-flash',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      temperature: 0.4,
+      temperature: 0.3,
+      max_tokens: 8000,
     }),
   });
 
@@ -146,347 +147,270 @@ async function callGemini(systemPrompt: string, userPrompt: string): Promise<str
   return j.choices?.[0]?.message?.content || '';
 }
 
+// Robust JSON parsing with truncation recovery
 function parseJSON(content: string): any {
-  // Try extracting from markdown code block first
+  // Try markdown code block
   const blockMatch = content.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
   if (blockMatch) {
-    return JSON.parse(blockMatch[1].trim());
+    try { return JSON.parse(blockMatch[1].trim()); } catch (_) { /* try recovery */ }
+    return parseWithRecovery(blockMatch[1].trim());
   }
+
   // Try raw JSON object
   const objMatch = content.match(/\{[\s\S]*\}/);
   if (objMatch) {
-    try { return JSON.parse(objMatch[0]); } catch (_) { /* fall through */ }
+    try { return JSON.parse(objMatch[0]); } catch (_) { /* try recovery */ }
   }
+
   // Try raw JSON array
   const arrMatch = content.match(/\[[\s\S]*\]/);
   if (arrMatch) {
-    try { return JSON.parse(arrMatch[0]); } catch (_) { /* fall through */ }
+    try { return JSON.parse(arrMatch[0]); } catch (_) { /* try recovery */ }
+    return parseWithRecovery(arrMatch[0]);
   }
-  // Last resort: try parsing the whole content
-  return JSON.parse(content.trim());
+
+  // Last resort
+  try { return JSON.parse(content.trim()); } catch (_) {}
+  return parseWithRecovery(content.trim());
 }
 
-// ============================================================================
-// STEP 1: Discover tourist places via Gemini
-// ============================================================================
-
-async function discoverPlaces(destination: string, city: string, state: string, activities: string[]): Promise<any[]> {
-  console.log(`[Places] Discovering attractions in ${destination}...`);
-
-  const system = `You are a knowledgeable Indian travel expert. You know REAL tourist places across all of India — from popular destinations to offbeat villages. Return ONLY valid JSON, no markdown, no explanation.`;
-
-  const prompt = `List the top 15 real tourist attractions in and around "${destination}" (${city}, ${state}, India).
-
-Include a mix of: ${activities.join(', ')}, sightseeing, cultural sites, nature spots, local markets, food streets.
-
-Return a JSON array with this EXACT format:
-[
-  {
-    "name": "Exact real place name",
-    "category": "beach|historical|temple|nature|market|food|museum|adventure|cultural|viewpoint",
-    "description": "One sentence about this place",
-    "duration_hours": 2,
-    "estimated_cost_inr": 200,
-    "outdoor": true,
-    "best_time": "Morning"
-  }
-]
-
-RULES:
-- Use ONLY real, existing places that tourists actually visit
-- Include the specific proper name (e.g. "Baga Beach" not "Beach Visit")
-- estimated_cost_inr = entry fee + typical spending (0 if free)
-- Return at least 12 places
-- Mix categories for variety`;
-
+function parseWithRecovery(content: string): any {
   try {
-    const raw = await callGemini(system, prompt);
-    const places = parseJSON(raw);
-    if (!Array.isArray(places) || places.length === 0) throw new Error('Empty places array');
-    console.log(`[Places] ✓ Found ${places.length} real attractions`);
-    return places;
-  } catch (e) {
-    console.error('[Places] Error:', e);
-    throw new Error(`Failed to discover places for ${destination}`);
+    return JSON.parse(content);
+  } catch {
+    // Attempt to repair truncated JSON array
+    const lastBrace = content.lastIndexOf("}");
+    if (lastBrace > 0) {
+      // Try closing as array
+      const repaired = content.substring(0, lastBrace + 1) + "]";
+      try {
+        const items = JSON.parse(repaired);
+        console.warn(`Recovered ${Array.isArray(items) ? items.length : 'object'} from truncated response`);
+        return items;
+      } catch { /* try object repair */ }
+
+      // Try closing as object
+      const repaired2 = content.substring(0, lastBrace + 1) + "}";
+      try {
+        return JSON.parse(repaired2);
+      } catch { /* give up */ }
+    }
+    throw new Error("Cannot parse AI response as JSON");
   }
 }
 
 // ============================================================================
-// STEP 2: Discover accommodation via Gemini
+// COMPLETE PLAN GENERATION — SINGLE GEMINI CALL
 // ============================================================================
 
-async function discoverAccommodation(destination: string, preference: string, budget: number, duration: number): Promise<any[]> {
-  console.log(`[Hotels] Finding ${preference} accommodation in ${destination}...`);
-
-  const nightlyBudget = Math.round((budget * 0.3) / duration);
-
-  const system = `You are an Indian hotel expert. You know real hotels, guesthouses, and resorts across India. Return ONLY valid JSON.`;
-
-  const prompt = `List 3 real accommodation options in "${destination}", India for a ${preference} traveler.
-Nightly budget target: approximately ₹${nightlyBudget}.
-
-Return a JSON array:
-[
-  {
-    "name": "Real hotel/guesthouse name",
-    "type": "hotel|guesthouse|resort|hostel",
-    "rating": 4.2,
-    "price_per_night": ${nightlyBudget},
-    "address": "Area or locality name",
-    "amenities": ["WiFi", "AC", "Restaurant"],
-    "why_chosen": "Brief reason"
-  }
-]
-
-RULES:
-- Use realistic hotel names that could exist in ${destination}
-- Prices must be realistic for the category
-- Include one budget, one mid-range, one premium option
-- Prices in INR`;
-
-  try {
-    const raw = await callGemini(system, prompt);
-    const hotels = parseJSON(raw);
-    if (!Array.isArray(hotels) || hotels.length === 0) throw new Error('Empty hotels array');
-    console.log(`[Hotels] ✓ Found ${hotels.length} options`);
-    return hotels;
-  } catch (e) {
-    console.error('[Hotels] Error:', e);
-    // Fallback
-    return [{
-      name: `${preference === 'luxury' ? 'Resort' : 'Hotel'} in ${destination}`,
-      type: 'hotel', rating: 3.5, price_per_night: nightlyBudget,
-      address: destination, amenities: ['WiFi', 'AC'], why_chosen: 'Fallback option'
-    }];
-  }
-}
-
-// ============================================================================
-// STEP 3: Generate transport options
-// ============================================================================
-
-function generateTransport(from: string, to: string, preference: string): any {
-  // Use logic-based distance heuristic
-  const options = [];
-
-  // Flight
-  if (preference !== 'public') {
-    options.push({
-      type: 'flight', from, to,
-      duration: '2h 00m',
-      price: 4500 + Math.floor(Math.random() * 2000),
-      carrier: 'IndiGo / SpiceJet / Air India',
-      booking: 'MakeMyTrip, Goibibo'
-    });
-  }
-
-  // Train
-  options.push({
-    type: 'train', from, to,
-    duration: '10h 00m',
-    price: 800 + Math.floor(Math.random() * 600),
-    carrier: 'Indian Railways (AC 3-Tier)',
-    booking: 'IRCTC'
-  });
-
-  // Bus
-  options.push({
-    type: 'bus', from, to,
-    duration: '12h 00m',
-    price: 600 + Math.floor(Math.random() * 400),
-    carrier: 'KSRTC / RedBus Partners',
-    booking: 'RedBus, AbhiBus'
-  });
-
-  return options;
-}
-
-// ============================================================================
-// STEP 4: Build final itinerary with Gemini reasoning
-// ============================================================================
-
-async function buildItinerary(
+async function generateCompletePlan(
   destination: string,
   location: LocationData,
   duration: number,
   budget: number,
   travelers: number,
   preferences: TravelRequest['preferences'],
-  places: any[],
-  hotels: any[],
-  transportOptions: any[],
   weather: WeatherDay[],
   originCity: string
 ): Promise<any> {
-  console.log(`[Itinerary] Building ${duration}-day plan with Gemini reasoning...`);
+  console.log(`[Plan] Generating complete plan via Gemini...`);
 
-  // Select best hotel based on preference
-  const prefMap: Record<string, number> = { budget: 0, 'mid-range': 1, luxury: 2 };
-  const hotelIdx = Math.min(prefMap[preferences.accommodation] || 1, hotels.length - 1);
-  const selectedHotel = hotels[hotelIdx] || hotels[0];
+  const weatherSummary = weather.map(w => `${w.date}: ${w.condition} ${w.temperature}°C (${w.suitable ? 'outdoor OK' : 'prefer indoor'})`).join('\n');
 
-  // Select best transport
-  const selectedTransport = transportOptions[0]; // Best option first
+  const system = `You are an expert Indian travel planner AI. You know REAL tourist places, restaurants, hotels across India. You MUST return ONLY valid JSON — no markdown, no explanation, no text before or after the JSON.`;
 
-  const system = `You are an expert travel itinerary planner. You create optimized day-by-day plans using ONLY the provided places. Return ONLY valid JSON, no other text.`;
+  const prompt = `Create a COMPLETE ${duration}-day travel plan for "${destination}" (${location.city}, ${location.state}).
 
-  const prompt = `Create a ${duration}-day travel itinerary for ${destination}.
-
-=== AVAILABLE PLACES (USE ONLY THESE) ===
-${JSON.stringify(places, null, 2)}
-
-=== WEATHER FORECAST ===
-${JSON.stringify(weather, null, 2)}
-
-=== SELECTED HOTEL ===
-${JSON.stringify(selectedHotel, null, 2)}
-
-=== TRANSPORT ===
-${JSON.stringify(selectedTransport, null, 2)}
-
-=== CONSTRAINTS ===
-- Total budget: ₹${budget} for ${travelers} traveler(s)
+TRAVELER INFO:
+- Budget: ₹${budget} total for ${travelers} person(s)
+- Accommodation preference: ${preferences.accommodation}
+- Transport preference: ${preferences.transportMode}
 - Pace: ${preferences.pace}
-- Activities preference: ${preferences.activities.join(', ')}
+- Interests: ${preferences.activities.join(', ')}
+- Origin city: ${originCity}
+
+WEATHER FORECAST:
+${weatherSummary}
+
+INSTRUCTIONS:
+1. Pick 10-15 REAL tourist attractions in ${destination} (use proper names like "Baga Beach", "Fort Aguada", NOT generic "Beach Visit")
+2. Group attractions by geographic proximity — nearby places on the same day
+3. Each day: 2-4 attractions + 1 lunch restaurant + 1 dinner restaurant (all REAL names)
+4. Add specific time slots (9:00 AM, 11:30 AM, etc.)
+5. On rainy days: prioritize museums, markets, temples, indoor cultural sites
+6. On clear days: prioritize beaches, nature, viewpoints, outdoor activities
+7. Include travel time between consecutive attractions
+8. Choose transport: flight if >700km from origin, train if 200-700km, bus/car if <200km
+9. Choose 1 hotel matching the budget tier from 3 options
+10. If total cost exceeds budget, optimize: cheaper transport, cheaper hotel, free attractions, budget restaurants
+11. Calculate ALL costs accurately
 
 Return this EXACT JSON structure:
 {
   "destination": "${destination}",
   "duration": ${duration},
+  "transport": {
+    "type": "flight|train|bus",
+    "from": "${originCity}",
+    "to": "${location.city}",
+    "duration": "2h 00m",
+    "price": 5000,
+    "carrier": "Airline/Railway name",
+    "round_trip_cost": 10000
+  },
+  "accommodation": {
+    "name": "Real Hotel Name",
+    "type": "hotel|resort|guesthouse",
+    "rating": 4.2,
+    "price_per_night": 2500,
+    "total_cost": ${(duration - 1)} * price,
+    "address": "Area, ${destination}",
+    "amenities": ["WiFi", "AC", "Pool"],
+    "alternatives": [
+      {"name": "Budget Option", "price_per_night": 1200, "rating": 3.5},
+      {"name": "Premium Option", "price_per_night": 5000, "rating": 4.8}
+    ]
+  },
   "daily_plan": [
     {
       "day": 1,
-      "date": "${weather[0]?.date || new Date().toISOString().split('T')[0]}",
-      "theme": "Short theme for the day",
+      "date": "${weather[0]?.date || ''}",
+      "theme": "Area Name - Day Theme",
       "weather": {
-        "condition": "${weather[0]?.condition || 'Clear'}",
-        "temperature": ${weather[0]?.temperature || 28},
-        "suitable": ${weather[0]?.suitable ?? true}
+        "condition": "Clear",
+        "temperature": 30,
+        "suitable": true,
+        "recommendation": "Great for outdoor activities"
       },
       "activities": [
         {
-          "name": "EXACT place name from the list above",
-          "description": "What to do here in 1-2 sentences",
-          "category": "category",
-          "time_of_day": "Morning",
-          "duration": "2-3 hours",
+          "name": "REAL Place Name",
+          "description": "What to see/do here in 1-2 sentences",
+          "category": "beach|historical|temple|nature|market|museum|adventure|cultural|viewpoint",
+          "time_slot": "9:00 AM",
+          "duration": "2 hours",
           "estimated_cost": 200,
-          "weather_suitable": true,
-          "tips": "One practical tip"
+          "tips": "Practical visitor tip",
+          "travel_from_previous": {
+            "distance_km": 5,
+            "travel_time": "15 min",
+            "mode": "auto-rickshaw"
+          }
         }
       ],
       "meals": {
-        "breakfast": { "suggestion": "Local spot or cuisine", "budget": 200 },
-        "lunch": { "suggestion": "Restaurant or street food area", "budget": 300 },
-        "dinner": { "suggestion": "Restaurant name or area", "budget": 400 }
+        "lunch": {
+          "name": "Real Restaurant Name",
+          "cuisine": "Goan / North Indian etc.",
+          "famous_for": "Signature dish",
+          "cost_per_person": 400,
+          "time_slot": "1:00 PM",
+          "location": "Near which attraction"
+        },
+        "dinner": {
+          "name": "Real Restaurant Name",
+          "cuisine": "Type",
+          "famous_for": "Dish",
+          "cost_per_person": 600,
+          "time_slot": "8:00 PM",
+          "location": "Area"
+        }
       },
-      "daily_cost": 1500
+      "daily_cost": 2500
     }
   ],
-  "accommodation": {
-    "name": "${selectedHotel.name}",
-    "type": "${selectedHotel.type}",
-    "rating": ${selectedHotel.rating},
-    "price_per_night": ${selectedHotel.price_per_night},
-    "total_cost": ${selectedHotel.price_per_night * (duration - 1)},
-    "address": "${selectedHotel.address}",
-    "amenities": ${JSON.stringify(selectedHotel.amenities || ['WiFi', 'AC'])}
-  },
-  "transport": {
-    "type": "${selectedTransport.type}",
-    "from": "${originCity}",
-    "to": "${destination}",
-    "price": ${selectedTransport.price},
-    "duration": "${selectedTransport.duration}",
-    "round_trip_cost": ${selectedTransport.price * 2}
-  },
   "budget_breakdown": {
-    "accommodation": ${selectedHotel.price_per_night * (duration - 1)},
-    "transport": ${selectedTransport.price * 2},
-    "activities": 0,
-    "food": 0,
-    "miscellaneous": 0,
-    "total": 0
+    "accommodation": 7500,
+    "transport": 10000,
+    "activities": 3000,
+    "food": 6000,
+    "local_transport": 2000,
+    "miscellaneous": 1500,
+    "total": 30000
   },
-  "budget_status": "approved",
-  "weather_status": "suitable",
-  "tips": ["3-5 practical travel tips"],
-  "notes": "Academic note: prices are estimates"
+  "budget_status": "approved|warning|exceeded",
+  "budget_optimization": {
+    "applied": false,
+    "changes": [],
+    "saved": 0
+  },
+  "weather_status": "suitable|partially-suitable",
+  "agent_decisions": {
+    "weather_agent": "Explanation of weather-based decisions",
+    "budget_agent": "Explanation of budget decisions and any optimizations",
+    "location_agent": "How places were selected and clustered",
+    "itinerary_agent": "How the schedule was organized",
+    "food_agent": "How restaurants were chosen",
+    "transport_agent": "Why this transport mode was selected"
+  },
+  "tips": ["3-5 practical tips"]
 }
 
-RULES:
-1. Each day MUST have 2-4 activities using EXACT names from the places list
-2. On rainy days, prefer indoor places (museums, temples, markets, food streets)
-3. On clear days, prefer outdoor places (beaches, viewpoints, nature)
-4. Calculate daily_cost = sum of activity costs + meal budgets
-5. budget_breakdown.activities = sum of all activity costs across all days
-6. budget_breakdown.food = sum of all meal budgets across all days
-7. budget_breakdown.miscellaneous = 10% of subtotal
-8. budget_breakdown.total = sum of all categories
-9. budget_status: "approved" if total <= ${budget}, "warning" if total <= ${budget * 1.15}, "exceeded" otherwise
-10. weather_status: "suitable" if most days are suitable, "partially-suitable" if mixed
-11. NEVER use generic names like "Beach Visit" — always use the specific place name`;
+CRITICAL RULES:
+- EVERY place name must be a REAL, specific place (never "Beach Visit" or "City Tour")
+- EVERY restaurant must be a real or realistic restaurant name for ${destination}
+- ALL costs in INR
+- daily_cost = sum of activity costs + lunch + dinner for ${travelers} person(s)
+- budget_breakdown.total MUST equal the sum of all sub-categories
+- If total > ₹${budget}: set budget_status to "exceeded" and fill budget_optimization with changes you'd make
+- Return ONLY the JSON object, nothing else`;
 
-  try {
-    const raw = await callGemini(system, prompt);
-    const plan = parseJSON(raw);
-    console.log(`[Itinerary] ✓ Plan generated with ${plan.daily_plan?.length || 0} days`);
-    return plan;
-  } catch (e) {
-    console.error('[Itinerary] Gemini error:', e);
-    throw new Error('Failed to generate itinerary');
+  const raw = await callGemini(system, prompt);
+  console.log(`[Plan] Raw response length: ${raw.length} chars`);
+
+  const plan = parseJSON(raw);
+
+  // Validate essential fields
+  if (!plan.daily_plan || !Array.isArray(plan.daily_plan) || plan.daily_plan.length === 0) {
+    throw new Error('Generated plan has no daily_plan');
   }
+
+  // Ensure every day has activities
+  for (const day of plan.daily_plan) {
+    if (!day.activities || day.activities.length === 0) {
+      throw new Error(`Day ${day.day} has no activities`);
+    }
+  }
+
+  console.log(`[Plan] ✓ Complete plan: ${plan.daily_plan.length} days, ${plan.daily_plan.reduce((s: number, d: any) => s + (d.activities?.length || 0), 0)} activities`);
+  return plan;
 }
 
 // ============================================================================
-// MAIN: Full plan generation pipeline
+// MAIN PIPELINE
 // ============================================================================
 
 async function generateFullPlan(req: TravelRequest): Promise<any> {
   console.log(`\n========== GENERATING PLAN ==========`);
-  console.log(`Destination: ${req.destination}`);
-  console.log(`Duration: ${req.duration} days | Budget: ₹${req.budget}`);
+  console.log(`Destination: ${req.destination} | ${req.duration} days | ₹${req.budget}`);
 
   // 1. Resolve location
-  console.log('\n[1/5] Resolving location...');
+  console.log('\n[1/3] Resolving location...');
   const loc = await resolveLocation(req.destination);
   if (!loc) throw new Error(`Cannot find location: ${req.destination}`);
   console.log(`✓ ${loc.city}, ${loc.state} (${loc.lat}, ${loc.lon})`);
 
   // 2. Fetch weather
-  console.log('\n[2/5] Fetching weather...');
+  console.log('\n[2/3] Fetching weather...');
   const weather = await fetchWeather(loc.lat, loc.lon, req.duration);
   console.log(`✓ Weather for ${weather.length} days`);
 
-  // 3. Discover places via Gemini
-  console.log('\n[3/5] Discovering places via Gemini...');
-  const places = await discoverPlaces(req.destination, loc.city, loc.state, req.preferences.activities);
-
-  // 4. Find accommodation via Gemini
-  console.log('\n[4/5] Finding accommodation...');
-  const hotels = await discoverAccommodation(req.destination, req.preferences.accommodation, req.budget, req.duration);
-
-  // 5. Generate transport
-  console.log('\n[5/5] Generating transport options...');
+  // 3. Generate complete plan in one Gemini call
+  console.log('\n[3/3] Generating complete plan via Gemini...');
   const originCity = req.originCity || 'Delhi';
-  const transport = generateTransport(originCity, loc.city, req.preferences.transportMode);
-
-  // 6. Build final itinerary with Gemini reasoning
-  console.log('\n[6/6] Building itinerary with Gemini...');
-  const plan = await buildItinerary(
+  const plan = await generateCompletePlan(
     req.destination, loc, req.duration, req.budget, req.travelers,
-    req.preferences, places, hotels, transport, weather, originCity
+    req.preferences, weather, originCity
   );
 
   // Attach metadata
   plan.resolvedLocation = { lat: loc.lat, lon: loc.lon };
   plan.sourceData = {
-    placesDiscovered: places.length,
-    accommodationsFound: hotels.length,
+    placesDiscovered: plan.daily_plan.reduce((s: number, d: any) => s + (d.activities?.length || 0), 0),
+    accommodationsFound: plan.accommodation?.alternatives?.length ? plan.accommodation.alternatives.length + 1 : 1,
     weatherSource: Deno.env.get('OPENWEATHERMAP_API_KEY') ? 'OpenWeatherMap API' : 'Simulated',
-    placesSource: 'Gemini AI (real place knowledge)',
+    aiModel: 'Gemini 2.5 Flash via Lovable AI',
     locationSource: 'OpenStreetMap Nominatim',
-    priceNote: 'Prices are realistic estimates (academic assumption)',
   };
 
   console.log('\n✅ Plan complete!');

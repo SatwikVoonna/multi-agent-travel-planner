@@ -52,6 +52,7 @@ export interface WeatherData {
   humidity: number;
   windSpeed: number;
   suitable: boolean;
+  recommendation?: string;
 }
 
 export interface HotelOption {
@@ -59,9 +60,12 @@ export interface HotelOption {
   name: string;
   rating: number;
   pricePerNight: number;
+  totalCost?: number;
   location: string;
+  type?: string;
   amenities: string[];
   image?: string;
+  alternatives?: { name: string; pricePerNight: number; rating: number }[];
 }
 
 export interface TransportOption {
@@ -71,8 +75,25 @@ export interface TransportOption {
   to: string;
   duration: string;
   price: number;
+  roundTripCost?: number;
+  carrier?: string;
   departure: string;
   arrival: string;
+}
+
+export interface MealRecommendation {
+  name: string;
+  cuisine: string;
+  famousFor: string;
+  costPerPerson: number;
+  timeSlot: string;
+  location: string;
+}
+
+export interface TravelBetween {
+  distanceKm: number;
+  travelTime: string;
+  mode: string;
 }
 
 export interface Activity {
@@ -83,14 +104,47 @@ export interface Activity {
   cost: number;
   description: string;
   weatherDependent: boolean;
+  timeSlot?: string;
+  tips?: string;
+  travelFromPrevious?: TravelBetween;
 }
 
 export interface DayPlan {
   day: number;
   date: string;
+  theme?: string;
   weather: WeatherData;
   activities: Activity[];
+  meals?: {
+    lunch?: MealRecommendation;
+    dinner?: MealRecommendation;
+  };
   totalCost: number;
+}
+
+export interface BudgetBreakdown {
+  accommodation: number;
+  transport: number;
+  activities: number;
+  food: number;
+  localTransport?: number;
+  miscellaneous: number;
+  total: number;
+}
+
+export interface BudgetOptimization {
+  applied: boolean;
+  changes: string[];
+  saved: number;
+}
+
+export interface AgentDecisions {
+  weather_agent?: string;
+  budget_agent?: string;
+  location_agent?: string;
+  itinerary_agent?: string;
+  food_agent?: string;
+  transport_agent?: string;
 }
 
 export interface TravelPlan {
@@ -99,18 +153,13 @@ export interface TravelPlan {
   totalBudget: number;
   totalCost: number;
   budgetStatus: 'approved' | 'warning' | 'exceeded';
+  budgetBreakdown?: BudgetBreakdown;
+  budgetOptimization?: BudgetOptimization;
   weatherStatus: 'suitable' | 'partially-suitable' | 'unsuitable';
   hotel: HotelOption | null;
   transport: TransportOption | null;
   itinerary: DayPlan[];
+  agentDecisions?: AgentDecisions;
+  tips?: string[];
   generatedAt: Date;
-}
-
-export interface BudgetBreakdown {
-  accommodation: number;
-  transport: number;
-  activities: number;
-  food: number;
-  miscellaneous: number;
-  total: number;
 }
