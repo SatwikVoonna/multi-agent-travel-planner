@@ -148,10 +148,33 @@ async function callGemini(systemPrompt: string, userPrompt: string): Promise<str
   return j.choices?.[0]?.message?.content || '';
 }
 
+// Evaluate simple math expressions in JSON values (e.g. "daily_cost": 4 * 100 + 200)
+function evaluateMathInJson(str: string): string {
+  // Match a colon followed by a math expression (not inside quotes)
+  // This replaces values like: 4 * (100 + 20) + 4 * 400 with the computed number
+  return str.replace(
+    /:\s*([\d\s\+\-\*\/\(\)\.]+(?:[\+\-\*\/][\d\s\+\-\*\/\(\)\.]+)+)\s*([,\}\]])/g,
+    (match, expr, ending) => {
+      try {
+        // Only evaluate if it contains math operators and looks like a math expression
+        if (/[+\-*/]/.test(expr) && /\d/.test(expr)) {
+          const result = Function(`"use strict"; return (${expr.trim()})`)();
+          if (typeof result === 'number' && isFinite(result)) {
+            return `: ${result}${ending}`;
+          }
+        }
+      } catch (_) { /* leave as-is if eval fails */ }
+      return match;
+    }
+  );
+}
+
 // Sanitize control characters and fix common JSON issues inside string values
 function sanitizeJsonString(str: string): string {
+  // First evaluate any math expressions
+  let s = evaluateMathInJson(str);
   // Remove control characters except \n \r \t
-  let s = str.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
+  s = s.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
   // Fix unescaped newlines inside JSON string values by processing character by character
   let result = '';
   let inString = false;
