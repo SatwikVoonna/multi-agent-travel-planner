@@ -403,10 +403,28 @@ CRITICAL RULES:
 - If total > ₹${budget}: set budget_status to "exceeded" and fill budget_optimization with changes you'd make
 - Return ONLY the JSON object, nothing else`;
 
-  const raw = await callGemini(system, prompt);
-  console.log(`[Plan] Raw response length: ${raw.length} chars`);
-
-  const plan = parseJSON(raw);
+  let plan: any;
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const raw = await callGemini(system, prompt);
+      console.log(`[Plan] Attempt ${attempt + 1}: Raw response length: ${raw.length} chars`);
+      plan = parseJSON(raw);
+      lastError = null;
+      break;
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e));
+      console.error(`[Plan] Attempt ${attempt + 1} failed:`, lastError.message);
+      if (attempt === 0) {
+        console.log('[Plan] Retrying...');
+      }
+    }
+  }
+  
+  if (lastError || !plan) {
+    throw lastError || new Error('Failed to generate plan');
+  }
 
   // Validate essential fields
   if (!plan.daily_plan || !Array.isArray(plan.daily_plan) || plan.daily_plan.length === 0) {
