@@ -245,6 +245,15 @@ INSTRUCTIONS:
 10. If total cost exceeds budget, optimize: cheaper transport, cheaper hotel, free attractions, budget restaurants
 11. Calculate ALL costs accurately
 
+TRANSPORT RULES:
+- "price" = ONE-WAY cost only
+- "round_trip_cost" MUST equal exactly price × 2 (no surcharges, no rounding up)
+- If total trip cost (transport + hotel + activities + food) exceeds budget by more than 10%, you MUST downgrade transport:
+  * Switch flight → train (suggest a specific popular train like Rajdhani Express, Shatabdi Express, Duronto Express, Garib Rath, Jan Shatabdi, or the best-known train on that route)
+  * Switch train → bus (suggest Volvo AC sleeper or state transport)
+  * Show the savings from the downgrade in budget_optimization
+- When suggesting train: use a REAL train name that operates on the route (e.g. "Goa Express 12779", "Kerala Express 12625", "Rajdhani Express")
+
 Return this EXACT JSON structure:
 {
   "destination": "${destination}",
@@ -255,7 +264,7 @@ Return this EXACT JSON structure:
     "to": "${location.city}",
     "duration": "2h 00m",
     "price": 5000,
-    "carrier": "Airline/Railway name",
+    "carrier": "Real Airline/Train name and number",
     "round_trip_cost": 10000
   },
   "accommodation": {

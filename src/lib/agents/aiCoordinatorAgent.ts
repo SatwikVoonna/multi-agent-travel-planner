@@ -164,16 +164,17 @@ export class AICoordinatorAgent extends BaseAgent {
       })),
     };
 
-    // Map transport
+    // Map transport — always compute round trip as exactly 2× one-way
     const tr = raw.transport || {};
+    const oneWayPrice = tr.price || 1000;
     const transport: TransportOption = {
       id: 'transport-1',
       type: (tr.type || 'train') as 'flight' | 'train' | 'bus' | 'car',
       from: tr.from || 'Delhi',
       to: tr.to || input.destination,
       duration: tr.duration || '10h',
-      price: tr.price || 1000,
-      roundTripCost: tr.round_trip_cost || (tr.price || 1000) * 2,
+      price: oneWayPrice,
+      roundTripCost: oneWayPrice * 2,
       carrier: tr.carrier || '',
       departure: '08:00 AM',
       arrival: 'Varies',
