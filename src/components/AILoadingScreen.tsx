@@ -49,14 +49,19 @@ export function AILoadingScreen({ isVisible }: AILoadingScreenProps) {
   // Generate stable random positions once per mount
   const iconPositions = useMemo(() =>
     floatingIcons.map(() => ({
-      left: Math.random() * 80 + 5,   // 5% to 85% 
-      top: Math.random() * 80 + 5,    // 5% to 85%
-      driftX: (Math.random() - 0.5) * 20,
-      driftY: (Math.random() - 0.5) * 30,
-      rotate: (Math.random() - 0.5) * 10,
-      duration: 6 + Math.random() * 6,
-      delay: Math.random() * 3,
-      size: 24 + Math.random() * 16,
+      left: Math.random() * 80 + 5,
+      top: Math.random() * 80 + 5,
+      driftX1: (Math.random() - 0.5) * 300,
+      driftX2: (Math.random() - 0.5) * 250,
+      driftX3: (Math.random() - 0.5) * 350,
+      driftY1: (Math.random() - 0.5) * 250,
+      driftY2: (Math.random() - 0.5) * 300,
+      driftY3: (Math.random() - 0.5) * 200,
+      rotate1: (Math.random() - 0.5) * 30,
+      rotate2: (Math.random() - 0.5) * 25,
+      duration: 10 + Math.random() * 8,
+      delay: Math.random() * 2,
+      size: 28 + Math.random() * 18,
     })),
   []);
 
@@ -114,9 +119,9 @@ export function AILoadingScreen({ isVisible }: AILoadingScreenProps) {
                   className="absolute opacity-[0.15] select-none"
                   style={{ left: `${p.left}%`, top: `${p.top}%`, fontSize: p.size }}
                   animate={{
-                    x: [0, p.driftX, -p.driftX * 0.6, 0],
-                    y: [0, -p.driftY, p.driftY * 0.7, 0],
-                    rotate: [0, p.rotate, -p.rotate, 0],
+                    x: [0, p.driftX1, p.driftX2, p.driftX3, 0],
+                    y: [0, p.driftY1, p.driftY2, p.driftY3, 0],
+                    rotate: [0, p.rotate1, -p.rotate2, p.rotate1 * 0.5, 0],
                   }}
                   transition={{
                     duration: p.duration,
