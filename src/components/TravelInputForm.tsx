@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, MapPin, Users, Wallet, Plane } from 'lucide-react';
+import { CalendarIcon, MapPin, Users, Wallet, Plane, Navigation } from 'lucide-react';
 
 interface TravelInputFormProps {
   onSubmit: (input: TravelInput) => void;
