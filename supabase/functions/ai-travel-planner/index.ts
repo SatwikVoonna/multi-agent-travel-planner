@@ -152,10 +152,18 @@ function parseJSON(content: string): any {
   if (blockMatch) {
     return JSON.parse(blockMatch[1].trim());
   }
-  // Try raw JSON
-  const rawMatch = content.match(/\{[\s\S]*\}/);
-  if (rawMatch) return JSON.parse(rawMatch[0]);
-  throw new Error('No JSON found in AI response');
+  // Try raw JSON object
+  const objMatch = content.match(/\{[\s\S]*\}/);
+  if (objMatch) {
+    try { return JSON.parse(objMatch[0]); } catch (_) { /* fall through */ }
+  }
+  // Try raw JSON array
+  const arrMatch = content.match(/\[[\s\S]*\]/);
+  if (arrMatch) {
+    try { return JSON.parse(arrMatch[0]); } catch (_) { /* fall through */ }
+  }
+  // Last resort: try parsing the whole content
+  return JSON.parse(content.trim());
 }
 
 // ============================================================================
