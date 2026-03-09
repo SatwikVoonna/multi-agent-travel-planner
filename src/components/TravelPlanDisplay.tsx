@@ -53,26 +53,26 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header Summary */}
-      <div className="bg-gradient-to-br from-primary/10 via-accent/5 to-success/10 rounded-2xl p-6 border">
-        <div className="flex items-start justify-between mb-4">
+      <div className="bg-gradient-to-br from-primary/10 via-accent/5 to-success/10 rounded-2xl p-4 sm:p-6 border">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
           <div>
-            <h2 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
-              <MapPin className="w-6 h-6 text-primary" />
+            <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground flex items-center gap-2">
+              <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               {plan.destination}
             </h2>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {plan.duration} Days • {plan.itinerary[0]?.date} to {plan.itinerary[plan.itinerary.length - 1]?.date}
             </p>
           </div>
-          <Button variant="outline" onClick={onReset}>
+          <Button variant="outline" size="sm" onClick={onReset}>
             Plan Another Trip
           </Button>
         </div>
 
         {/* Status Cards */}
-        <div className="grid grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
           <div className="bg-card rounded-xl p-4 border">
             <div className="flex items-center gap-2 mb-2">
               <Wallet className="w-4 h-4 text-muted-foreground" />
