@@ -358,7 +358,7 @@ CRITICAL BUDGET RULES:
 - The TOTAL of all costs must not exceed ₹${budget}
 
 TRANSPORT RULES:
-- "price" = ONE-WAY cost only
+- "price" = ONE-WAY cost for ALL ${travelers} person(s)
 - "round_trip_cost" MUST equal exactly price × 2 (no surcharges, no rounding up)
 - If total trip cost (transport + hotel + activities + food) exceeds budget by more than 10%, you MUST downgrade transport:
   * Switch flight → train (suggest a specific popular train like Rajdhani Express, Shatabdi Express, Duronto Express, Garib Rath, Jan Shatabdi, or the best-known train on that route)
