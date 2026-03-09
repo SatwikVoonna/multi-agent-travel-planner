@@ -322,7 +322,9 @@ async function generateCompletePlan(
   const prompt = `Create a COMPLETE ${duration}-day travel plan for "${destination}" (${location.city}, ${location.state}).
 
 TRAVELER INFO:
-- Budget: ₹${budget} total for ${travelers} person(s)
+- Number of travelers: ${travelers} person(s)
+- Total budget: ₹${budget} for ALL ${travelers} person(s) combined
+- Budget per person: ₹${Math.round(budget / travelers)}
 - Accommodation preference: ${preferences.accommodation}
 - Transport preference: ${preferences.transportMode}
 - Pace: ${preferences.pace}
@@ -343,10 +345,20 @@ INSTRUCTIONS:
 8. Choose transport: flight if >700km from origin, train if 200-700km, bus/car if <200km
 9. Choose 1 hotel matching the budget tier from 3 options
 10. If total cost exceeds budget, optimize: cheaper transport, cheaper hotel, free attractions, budget restaurants
-11. Calculate ALL costs accurately
+11. Calculate ALL costs accurately for ${travelers} person(s)
+
+CRITICAL BUDGET RULES:
+- ALL prices must account for ${travelers} person(s)
+- Transport "price" = ONE-WAY cost for ALL ${travelers} person(s) combined
+- Transport "round_trip_cost" = price × 2
+- Hotel "price_per_night" = cost per room (assuming 2 people per room, book ${Math.ceil(travelers / 2)} room(s))
+- Hotel "total_cost" = price_per_night × ${duration - 1} night(s) × ${Math.ceil(travelers / 2)} room(s)
+- Food costs = per-person meal price × ${travelers} person(s)
+- Activity entry fees = per-person cost × ${travelers} person(s)
+- The TOTAL of all costs must not exceed ₹${budget}
 
 TRANSPORT RULES:
-- "price" = ONE-WAY cost only
+- "price" = ONE-WAY cost for ALL ${travelers} person(s)
 - "round_trip_cost" MUST equal exactly price × 2 (no surcharges, no rounding up)
 - If total trip cost (transport + hotel + activities + food) exceeds budget by more than 10%, you MUST downgrade transport:
   * Switch flight → train (suggest a specific popular train like Rajdhani Express, Shatabdi Express, Duronto Express, Garib Rath, Jan Shatabdi, or the best-known train on that route)

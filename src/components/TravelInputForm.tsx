@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { TravelInput, TravelPreferences } from '@/types/agent';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -9,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon, MapPin, Users, Wallet, Plane, Navigation } from 'lucide-react';
+import { LocationAutocomplete } from './LocationAutocomplete';
+import { Input } from '@/components/ui/input';
 
 interface TravelInputFormProps {
   onSubmit: (input: TravelInput) => void;
@@ -90,12 +91,11 @@ export function TravelInputForm({ onSubmit, isLoading }: TravelInputFormProps) {
             <Navigation className="w-4 h-4 text-primary" />
             Travelling From
           </Label>
-          <Input
+          <LocationAutocomplete
             id="originCity"
             placeholder="Your city (e.g. Delhi, Mumbai)"
             value={originCity}
-            onChange={(e) => setOriginCity(e.target.value)}
-            className="text-lg"
+            onChange={setOriginCity}
           />
         </div>
 
@@ -104,12 +104,11 @@ export function TravelInputForm({ onSubmit, isLoading }: TravelInputFormProps) {
             <MapPin className="w-4 h-4 text-primary" />
             Destination
           </Label>
-          <Input
+          <LocationAutocomplete
             id="destination"
             placeholder="Where do you want to go?"
             value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            className="text-lg"
+            onChange={setDestination}
           />
         </div>
       </div>
