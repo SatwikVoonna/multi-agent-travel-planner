@@ -23,6 +23,8 @@ import {
   Car
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { generateTravelPDF } from '@/lib/generateTravelPDF';
+import { Download } from 'lucide-react';
 
 interface TravelPlanDisplayProps {
   plan: TravelPlan;
@@ -305,6 +307,18 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
           </ul>
         </div>
       )}
+
+      {/* Download PDF */}
+      <div className="flex justify-center">
+        <Button
+          size="lg"
+          onClick={() => generateTravelPDF(plan)}
+          className="gap-2"
+        >
+          <Download className="w-5 h-5" />
+          Download Trip Plan as PDF
+        </Button>
+      </div>
 
       {/* Summary Footer */}
       <div className="bg-muted rounded-xl p-4 text-center">
