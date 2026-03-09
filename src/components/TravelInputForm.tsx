@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { TravelInput, TravelPreferences } from '@/types/agent';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -9,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon, MapPin, Users, Wallet, Plane, Navigation } from 'lucide-react';
+import { LocationAutocomplete } from './LocationAutocomplete';
+import { Input } from '@/components/ui/input';
 
 interface TravelInputFormProps {
   onSubmit: (input: TravelInput) => void;
