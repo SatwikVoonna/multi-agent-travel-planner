@@ -91,12 +91,11 @@ export function TravelInputForm({ onSubmit, isLoading }: TravelInputFormProps) {
             <Navigation className="w-4 h-4 text-primary" />
             Travelling From
           </Label>
-          <Input
+          <LocationAutocomplete
             id="originCity"
             placeholder="Your city (e.g. Delhi, Mumbai)"
             value={originCity}
-            onChange={(e) => setOriginCity(e.target.value)}
-            className="text-lg"
+            onChange={setOriginCity}
           />
         </div>
 
@@ -105,12 +104,11 @@ export function TravelInputForm({ onSubmit, isLoading }: TravelInputFormProps) {
             <MapPin className="w-4 h-4 text-primary" />
             Destination
           </Label>
-          <Input
+          <LocationAutocomplete
             id="destination"
             placeholder="Where do you want to go?"
             value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            className="text-lg"
+            onChange={setDestination}
           />
         </div>
       </div>
