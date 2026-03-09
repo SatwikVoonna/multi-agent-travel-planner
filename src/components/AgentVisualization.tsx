@@ -41,7 +41,7 @@ export function AgentVisualization({ agents, messages }: AgentVisualizationProps
         )}
 
         {/* Other agents in grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {otherAgents.map((agent) => (
             <AgentCard 
               key={agent.id} 
