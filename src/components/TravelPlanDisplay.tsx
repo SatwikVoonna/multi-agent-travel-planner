@@ -109,13 +109,13 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
             </p>
           </div>
 
-          <div className="bg-card rounded-xl p-4 border">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="bg-card rounded-xl p-3 sm:p-4 border">
+            <div className="flex items-center gap-2 mb-1 sm:mb-2">
               <Sun className="w-4 h-4 text-warning" />
-              <span className="text-sm text-muted-foreground">Weather</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">Weather</span>
             </div>
             <p className={cn(
-              'text-xl font-display font-bold capitalize',
+              'text-lg sm:text-xl font-display font-bold capitalize',
               plan.weatherStatus === 'suitable' && 'text-success',
               plan.weatherStatus === 'partially-suitable' && 'text-warning',
               plan.weatherStatus === 'unsuitable' && 'text-destructive'
