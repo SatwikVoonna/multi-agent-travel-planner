@@ -86,13 +86,13 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
             </p>
           </div>
 
-          <div className="bg-card rounded-xl p-4 border">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="bg-card rounded-xl p-3 sm:p-4 border">
+            <div className="flex items-center gap-2 mb-1 sm:mb-2">
               {getBudgetIcon()}
-              <span className="text-sm text-muted-foreground">Budget Status</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">Budget Status</span>
             </div>
             <p className={cn(
-              'text-xl font-display font-bold capitalize',
+              'text-lg sm:text-xl font-display font-bold capitalize',
               plan.budgetStatus === 'approved' && 'text-success',
               plan.budgetStatus === 'warning' && 'text-warning',
               plan.budgetStatus === 'exceeded' && 'text-destructive'
