@@ -162,8 +162,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t py-6 mt-12">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>Multi-Agent Travel Planner • Powered by Gemini AI</p>
-          <p className="text-xs mt-1">Using Lovable AI Gateway • Booking.com/Airbnb-style Recommendations</p>
+          <p>Multi-Agent Travel Planner</p>
         </div>
       </footer>
     </div>
