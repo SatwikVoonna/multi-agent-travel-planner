@@ -107,6 +107,17 @@ const Index = () => {
                 <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Budget & preference aware</p>
               </div>
             </div>
+
+            {/* CTA pointer to scroll down to input form */}
+            <div className="mt-8 sm:mt-10 animate-bounce">
+              <button
+                onClick={() => document.getElementById('plan-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className="inline-flex flex-col items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <span className="text-sm font-medium">Start planning your trip below</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+              </button>
+            </div>
           </div>
         </section>
       )}
