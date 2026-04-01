@@ -123,7 +123,7 @@ const Index = () => {
       )}
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main id="plan-section" className="container mx-auto px-4 py-8">
         {travelPlan ? (
           <TravelPlanDisplay plan={travelPlan} onReset={resetPlan} />
         ) : (
