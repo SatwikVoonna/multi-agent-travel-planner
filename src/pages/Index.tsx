@@ -109,13 +109,14 @@ const Index = () => {
             </div>
 
             {/* CTA pointer to scroll down to input form */}
-            <div className="mt-8 sm:mt-10 animate-bounce">
+            <div className="mt-12 sm:mt-16">
               <button
                 onClick={() => document.getElementById('plan-section')?.scrollIntoView({ behavior: 'smooth' })}
-                className="inline-flex flex-col items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                className="group inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full font-medium text-sm shadow-lg hover:shadow-xl transition-all hover:scale-105"
               >
-                <span className="text-sm font-medium">Start planning your trip below</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                <Compass className="w-4 h-4" />
+                Start Planning Your Trip
+                <svg className="w-4 h-4 animate-bounce" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
               </button>
             </div>
           </div>
