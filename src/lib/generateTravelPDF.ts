@@ -120,7 +120,7 @@ export function generateTravelPDF(plan: TravelPlan) {
     doc.text(`${plan.transport.type} — ${plan.transport.from} to ${plan.transport.to}`, summaryLeft, y + 6);
     doc.setTextColor(...colors.orange);
     doc.setFont('helvetica', 'bold');
-    doc.text(`₹${plan.transport.cost.toLocaleString()}`, summaryLeft, y + 11);
+    doc.text(`₹${plan.transport.price.toLocaleString()}`, summaryLeft, y + 11);
   }
 
   doc.setFont('helvetica', 'bold');
