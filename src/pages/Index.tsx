@@ -112,7 +112,7 @@ const Index = () => {
             <div className="mt-12 sm:mt-16">
               <button
                 onClick={() => document.getElementById('plan-section')?.scrollIntoView({ behavior: 'smooth' })}
-                className="group inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full font-medium text-sm shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:shadow-[0_6px_28px_rgba(0,0,0,0.4)] transition-all hover:scale-105"
+                className="group inline-flex items-center gap-2 bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white px-6 py-3 rounded-full font-medium text-sm shadow-[0_4px_20px_rgba(59,130,246,0.4)] hover:shadow-[0_6px_28px_rgba(59,130,246,0.5)] transition-all hover:scale-105"
               >
                 <Compass className="w-4 h-4" />
                 Start Planning Your Trip
