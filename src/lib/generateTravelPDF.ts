@@ -289,10 +289,10 @@ export function generateTravelPDF(plan: TravelPlan) {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textPrimary);
-      doc.text(label, margin + 4, y);
+      doc.text(label, margin + 6, y);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...colors.accentGold);
-      doc.text(`₹${val.toLocaleString()}`, pageWidth - margin, y, { align: 'right' });
+      doc.text(`₹${val.toLocaleString()}`, pageWidth - margin - 4, y, { align: 'right' });
       y += 7;
     }
 
