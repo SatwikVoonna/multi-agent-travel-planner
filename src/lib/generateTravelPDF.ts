@@ -258,16 +258,16 @@ export function generateTravelPDF(plan: TravelPlan) {
 
   // ===== COST BREAKDOWN =====
   if (plan.budgetBreakdown) {
-    checkPage(55);
-    y += 2;
+    checkPage(70);
+    y += 4;
 
     doc.setFillColor(...colors.accent);
-    doc.roundedRect(margin, y - 4, contentWidth, 8, 1, 1, 'F');
-    doc.setFontSize(9);
+    doc.roundedRect(margin, y - 5, contentWidth, 10, 1.5, 1.5, 'F');
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.bgDark);
-    doc.text('Cost Breakdown', margin + 4, y + 1);
-    y += 10;
+    doc.text('Cost Breakdown', margin + 6, y + 2);
+    y += 14;
 
     const items = [
       ['Accommodation', plan.budgetBreakdown.accommodation],
@@ -283,33 +283,33 @@ export function generateTravelPDF(plan: TravelPlan) {
 
       if (i % 2 === 0) {
         doc.setFillColor(...colors.cardBg);
-        doc.rect(margin, y - 4, contentWidth, 7, 'F');
+        doc.rect(margin, y - 5, contentWidth, 9, 'F');
       }
 
-      doc.setFontSize(8);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textPrimary);
-      doc.text(label, margin + 6, y);
+      doc.text(label, margin + 8, y);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...colors.accentGold);
-      doc.text(`₹${val.toLocaleString()}`, pageWidth - margin - 4, y, { align: 'right' });
-      y += 7;
+      doc.text(`₹${val.toLocaleString()}`, pageWidth - margin - 8, y, { align: 'right' });
+      y += 9;
     }
 
     doc.setDrawColor(...colors.accent);
     doc.setLineWidth(0.5);
     doc.line(margin, y - 2, pageWidth - margin, y - 2);
-    y += 3;
+    y += 5;
 
-    doc.setFontSize(10);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.accent);
-    doc.text('TOTAL', margin + 6, y);
+    doc.text('TOTAL', margin + 8, y);
     doc.setTextColor(...colors.accentGold);
-    doc.text(`₹${plan.totalCost.toLocaleString()}`, pageWidth - margin - 4, y, { align: 'right' });
+    doc.text(`₹${plan.totalCost.toLocaleString()}`, pageWidth - margin - 8, y, { align: 'right' });
 
-    y += 6;
-    doc.setFontSize(7);
+    y += 8;
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...colors.textMuted);
     const statusText = plan.budgetStatus === 'approved'
@@ -317,7 +317,7 @@ export function generateTravelPDF(plan: TravelPlan) {
       : plan.budgetStatus === 'warning'
         ? '⚠ Tight Budget'
         : '✗ Over Budget';
-    doc.text(`Budget: ₹${plan.totalBudget.toLocaleString()}  •  ${statusText}`, margin + 4, y);
+    doc.text(`Budget: ₹${plan.totalBudget.toLocaleString()}  •  ${statusText}`, margin + 6, y);
     y += 10;
   }
 
