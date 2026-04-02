@@ -150,13 +150,15 @@ export function generateTravelPDF(plan: TravelPlan) {
   // ===== DAY-WISE ITINERARY =====
   const tabWidth = 18;
   const tabX = margin;
-  const contentX = margin + tabWidth + 4;
-  const actContentWidth = contentWidth - tabWidth - 4;
+  const contentX = margin + tabWidth + 6;
+  const cardRight = pageWidth - margin;
+  const innerPad = 6;
+  const actContentWidth = cardRight - contentX - innerPad;
 
   for (const day of plan.itinerary) {
     const activityLines = day.activities.length;
     const mealLines = (day.meals?.lunch ? 1 : 0) + (day.meals?.dinner ? 1 : 0);
-    const neededHeight = 14 + (activityLines + mealLines) * 8 + 6;
+    const neededHeight = 16 + (activityLines + mealLines) * 8 + 8;
 
     checkPage(neededHeight);
 
@@ -165,7 +167,7 @@ export function generateTravelPDF(plan: TravelPlan) {
 
     // Day content card background
     doc.setFillColor(...colors.cardBg);
-    doc.roundedRect(contentX - 2, blockStartY, actContentWidth + 2, neededHeight - 2, 2, 2, 'F');
+    doc.roundedRect(contentX - 2, blockStartY, cardRight - contentX + 2, neededHeight - 2, 2, 2, 'F');
 
     // Vertical colored tab
     doc.setFillColor(...tabColor);
@@ -180,24 +182,24 @@ export function generateTravelPDF(plan: TravelPlan) {
     doc.text(dayLabel, tabX + tabWidth / 2, tabCenterY, { align: 'center', angle: 90 });
 
     // Activity header
-    let ay = blockStartY + 5;
+    let ay = blockStartY + 6;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.textPrimary);
-    doc.text('Time', contentX, ay);
-    doc.text('Activity', contentX + 22, ay);
+    doc.text('Time', contentX + 2, ay);
+    doc.text('Activity', contentX + 24, ay);
 
     // Weather + date info
     doc.setFontSize(6);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...colors.textMuted);
-    doc.text(`${day.date}  •  ${day.weather.temperature}°C, ${day.weather.condition}`, contentX + 60, ay);
+    doc.text(`${day.date}  •  ${day.weather.temperature}°C, ${day.weather.condition}`, contentX + 62, ay);
 
-    ay += 3;
+    ay += 4;
 
     doc.setDrawColor(...colors.separator);
     doc.setLineWidth(0.3);
-    doc.line(contentX, ay, pageWidth - margin, ay);
+    doc.line(contentX + 2, ay, cardRight - 4, ay);
 
     ay += 5;
 
@@ -208,17 +210,17 @@ export function generateTravelPDF(plan: TravelPlan) {
 
       doc.setTextColor(...colors.textMuted);
       const timeStr = act.timeSlot || '—';
-      doc.text(timeStr, contentX, ay);
+      doc.text(timeStr, contentX + 2, ay);
 
       doc.setTextColor(...colors.textPrimary);
       const actName = act.name;
-      const truncatedName = doc.splitTextToSize(actName, actContentWidth - 55);
-      doc.text(truncatedName[0], contentX + 22, ay);
+      const truncatedName = doc.splitTextToSize(actName, actContentWidth - 50);
+      doc.text(truncatedName[0], contentX + 24, ay);
 
       const costStr = act.cost === 0 ? 'Free' : `₹${act.cost.toLocaleString()}`;
       doc.setTextColor(...tabColor);
       doc.setFont('helvetica', 'bold');
-      doc.text(costStr, pageWidth - margin, ay, { align: 'right' });
+      doc.text(costStr, cardRight - innerPad, ay, { align: 'right' });
 
       ay += 7;
     }
@@ -228,26 +230,26 @@ export function generateTravelPDF(plan: TravelPlan) {
       doc.setFontSize(7);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(...colors.textMuted);
-      doc.text('Lunch', contentX, ay);
+      doc.text('Lunch', contentX + 2, ay);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textPrimary);
-      doc.text(`${day.meals.lunch.name} (${day.meals.lunch.cuisine})`, contentX + 22, ay);
+      doc.text(`${day.meals.lunch.name} (${day.meals.lunch.cuisine})`, contentX + 24, ay);
       doc.setTextColor(...colors.accentGold);
       doc.setFont('helvetica', 'bold');
-      doc.text(`₹${day.meals.lunch.costPerPerson}`, pageWidth - margin, ay, { align: 'right' });
+      doc.text(`₹${day.meals.lunch.costPerPerson}`, cardRight - innerPad, ay, { align: 'right' });
       ay += 7;
     }
     if (day.meals?.dinner) {
       doc.setFontSize(7);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(...colors.textMuted);
-      doc.text('Dinner', contentX, ay);
+      doc.text('Dinner', contentX + 2, ay);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textPrimary);
-      doc.text(`${day.meals.dinner.name} (${day.meals.dinner.cuisine})`, contentX + 22, ay);
+      doc.text(`${day.meals.dinner.name} (${day.meals.dinner.cuisine})`, contentX + 24, ay);
       doc.setTextColor(...colors.accentGold);
       doc.setFont('helvetica', 'bold');
-      doc.text(`₹${day.meals.dinner.costPerPerson}`, pageWidth - margin, ay, { align: 'right' });
+      doc.text(`₹${day.meals.dinner.costPerPerson}`, cardRight - innerPad, ay, { align: 'right' });
       ay += 7;
     }
 
@@ -287,10 +289,10 @@ export function generateTravelPDF(plan: TravelPlan) {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textPrimary);
-      doc.text(label, margin + 4, y);
+      doc.text(label, margin + 6, y);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...colors.accentGold);
-      doc.text(`₹${val.toLocaleString()}`, pageWidth - margin, y, { align: 'right' });
+      doc.text(`₹${val.toLocaleString()}`, pageWidth - margin - 4, y, { align: 'right' });
       y += 7;
     }
 
@@ -302,9 +304,9 @@ export function generateTravelPDF(plan: TravelPlan) {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.accent);
-    doc.text('TOTAL', margin + 4, y);
+    doc.text('TOTAL', margin + 6, y);
     doc.setTextColor(...colors.accentGold);
-    doc.text(`₹${plan.totalCost.toLocaleString()}`, pageWidth - margin, y, { align: 'right' });
+    doc.text(`₹${plan.totalCost.toLocaleString()}`, pageWidth - margin - 4, y, { align: 'right' });
 
     y += 6;
     doc.setFontSize(7);
