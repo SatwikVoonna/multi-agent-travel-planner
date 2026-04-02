@@ -174,7 +174,7 @@ export function generateTravelPDF(plan: TravelPlan) {
     doc.roundedRect(tabX, blockStartY, tabWidth, neededHeight - 2, 2, 2, 'F');
 
     // Day label (rotated)
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.bgDark);
     const dayLabel = `DAY ${day.day}`;
@@ -182,75 +182,75 @@ export function generateTravelPDF(plan: TravelPlan) {
     doc.text(dayLabel, tabX + tabWidth / 2, tabCenterY, { align: 'center', angle: 90 });
 
     // Activity header
-    let ay = blockStartY + 6;
-    doc.setFontSize(8);
+    let ay = blockStartY + 7;
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.textPrimary);
-    doc.text('Time', contentX + 2, ay);
-    doc.text('Activity', contentX + 24, ay);
+    doc.text('Time', contentX + 4, ay);
+    doc.text('Activity', contentX + 28, ay);
 
     // Weather + date info
-    doc.setFontSize(6);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...colors.textMuted);
-    doc.text(`${day.date}  •  ${day.weather.temperature}°C, ${day.weather.condition}`, contentX + 62, ay);
-
-    ay += 4;
-
-    doc.setDrawColor(...colors.separator);
-    doc.setLineWidth(0.3);
-    doc.line(contentX + 2, ay, cardRight - 4, ay);
+    doc.text(`${day.date}  •  ${day.weather.temperature}°C, ${day.weather.condition}`, contentX + 68, ay);
 
     ay += 5;
 
+    doc.setDrawColor(...colors.separator);
+    doc.setLineWidth(0.3);
+    doc.line(contentX + 4, ay, cardRight - 6, ay);
+
+    ay += 6;
+
     // Activities
     for (const act of day.activities) {
-      doc.setFontSize(7);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
 
       doc.setTextColor(...colors.textMuted);
       const timeStr = act.timeSlot || '—';
-      doc.text(timeStr, contentX + 2, ay);
+      doc.text(timeStr, contentX + 4, ay);
 
       doc.setTextColor(...colors.textPrimary);
       const actName = act.name;
-      const truncatedName = doc.splitTextToSize(actName, actContentWidth - 50);
-      doc.text(truncatedName[0], contentX + 24, ay);
+      const truncatedName = doc.splitTextToSize(actName, actContentWidth - 55);
+      doc.text(truncatedName[0], contentX + 28, ay);
 
       const costStr = act.cost === 0 ? 'Free' : `₹${act.cost.toLocaleString()}`;
       doc.setTextColor(...tabColor);
       doc.setFont('helvetica', 'bold');
       doc.text(costStr, cardRight - innerPad, ay, { align: 'right' });
 
-      ay += 7;
+      ay += 9;
     }
 
     // Meals
     if (day.meals?.lunch) {
-      doc.setFontSize(7);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(...colors.textMuted);
-      doc.text('Lunch', contentX + 2, ay);
+      doc.text('Lunch', contentX + 4, ay);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textPrimary);
-      doc.text(`${day.meals.lunch.name} (${day.meals.lunch.cuisine})`, contentX + 24, ay);
+      doc.text(`${day.meals.lunch.name} (${day.meals.lunch.cuisine})`, contentX + 28, ay);
       doc.setTextColor(...colors.accentGold);
       doc.setFont('helvetica', 'bold');
       doc.text(`₹${day.meals.lunch.costPerPerson}`, cardRight - innerPad, ay, { align: 'right' });
-      ay += 7;
+      ay += 9;
     }
     if (day.meals?.dinner) {
-      doc.setFontSize(7);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(...colors.textMuted);
-      doc.text('Dinner', contentX + 2, ay);
+      doc.text('Dinner', contentX + 4, ay);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textPrimary);
-      doc.text(`${day.meals.dinner.name} (${day.meals.dinner.cuisine})`, contentX + 24, ay);
+      doc.text(`${day.meals.dinner.name} (${day.meals.dinner.cuisine})`, contentX + 28, ay);
       doc.setTextColor(...colors.accentGold);
       doc.setFont('helvetica', 'bold');
       doc.text(`₹${day.meals.dinner.costPerPerson}`, cardRight - innerPad, ay, { align: 'right' });
-      ay += 7;
+      ay += 9;
     }
 
     y = ay + 6;
