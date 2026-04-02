@@ -158,7 +158,7 @@ export function generateTravelPDF(plan: TravelPlan) {
   for (const day of plan.itinerary) {
     const activityLines = day.activities.length;
     const mealLines = (day.meals?.lunch ? 1 : 0) + (day.meals?.dinner ? 1 : 0);
-    const neededHeight = 16 + (activityLines + mealLines) * 8 + 8;
+    const neededHeight = 20 + (activityLines + mealLines) * 10 + 10;
 
     checkPage(neededHeight);
 
