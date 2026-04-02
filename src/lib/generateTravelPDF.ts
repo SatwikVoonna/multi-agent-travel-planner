@@ -304,9 +304,9 @@ export function generateTravelPDF(plan: TravelPlan) {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.accent);
-    doc.text('TOTAL', margin + 4, y);
+    doc.text('TOTAL', margin + 6, y);
     doc.setTextColor(...colors.accentGold);
-    doc.text(`₹${plan.totalCost.toLocaleString()}`, pageWidth - margin, y, { align: 'right' });
+    doc.text(`₹${plan.totalCost.toLocaleString()}`, pageWidth - margin - 4, y, { align: 'right' });
 
     y += 6;
     doc.setFontSize(7);
