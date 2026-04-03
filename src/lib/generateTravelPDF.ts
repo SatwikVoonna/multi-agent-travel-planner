@@ -347,6 +347,50 @@ export function generateTravelPDF(plan: TravelPlan) {
     y += 10;
   }
 
+  // ===== AGENT DECISIONS =====
+  if (plan.agentDecisions) {
+    checkPage(50);
+    y += 4;
+
+    doc.setFillColor(...colors.accent);
+    doc.roundedRect(margin, y - 5, contentWidth, 11, 1.5, 1.5, 'F');
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...colors.bgDark);
+    doc.text('Agent Decision Summary', margin + 6, y + 2);
+    y += 14;
+
+    const agentEntries = [
+      { key: 'weather_agent', icon: '🌤️', label: 'Weather Agent' },
+      { key: 'budget_agent', icon: '💰', label: 'Budget Agent' },
+      { key: 'location_agent', icon: '📍', label: 'Location Agent' },
+      { key: 'itinerary_agent', icon: '📋', label: 'Itinerary Agent' },
+      { key: 'food_agent', icon: '🍽️', label: 'Food Agent' },
+      { key: 'transport_agent', icon: '🚗', label: 'Transport Agent' },
+    ];
+
+    for (const entry of agentEntries) {
+      const decision = (plan.agentDecisions as any)[entry.key];
+      if (!decision) continue;
+      checkPage(14);
+
+      doc.setFillColor(...colors.cardBg);
+      doc.roundedRect(margin, y - 4, contentWidth, 12, 1, 1, 'F');
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...colors.accent);
+      doc.text(`${entry.label}`, margin + 6, y + 1);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...colors.textPrimary);
+      const decLines = doc.splitTextToSize(`→ ${decision}`, contentWidth - 60);
+      doc.text(decLines[0], margin + 50, y + 1);
+      y += 13;
+    }
+    y += 4;
+  }
+
   // ===== TIPS =====
   if (plan.tips && plan.tips.length > 0) {
     checkPage(24);
