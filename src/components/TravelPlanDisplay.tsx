@@ -304,16 +304,26 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
             Agent Decision Summary
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {Object.entries(plan.agentDecisions).map(([agent, decision]) => (
-              decision ? (
-                <div key={agent} className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-sm font-medium capitalize mb-1">
-                    {agent.replace('_', ' ')}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{decision}</p>
+            {[
+              { key: 'weather_agent', icon: '🌤️', label: 'Weather Agent' },
+              { key: 'budget_agent', icon: '💰', label: 'Budget Agent' },
+              { key: 'location_agent', icon: '📍', label: 'Location Agent' },
+              { key: 'itinerary_agent', icon: '📋', label: 'Itinerary Agent' },
+              { key: 'food_agent', icon: '🍽️', label: 'Food Agent' },
+              { key: 'transport_agent', icon: '🚗', label: 'Transport Agent' },
+            ].map(({ key, icon, label }) => {
+              const decision = (plan.agentDecisions as any)?.[key];
+              if (!decision) return null;
+              return (
+                <div key={key} className="bg-muted/50 rounded-lg p-3 border border-border/50">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-lg">{icon}</span>
+                    <p className="text-sm font-semibold">{label}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">→ {decision}</p>
                 </div>
-              ) : null
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
