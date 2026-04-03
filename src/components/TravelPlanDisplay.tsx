@@ -255,6 +255,33 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
         )}
       </div>
 
+      {/* Map Visualization */}
+      {plan.resolvedLocation && (
+        <div className="bg-card rounded-xl p-5 border">
+          <h3 className="font-display font-bold text-xl mb-4 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-primary" />
+            Trip Map — {plan.destination}
+          </h3>
+          <TravelMap
+            destination={plan.destination}
+            lat={plan.resolvedLocation.lat}
+            lon={plan.resolvedLocation.lon}
+            itinerary={plan.itinerary}
+          />
+          <div className="flex flex-wrap gap-3 mt-3">
+            {plan.itinerary.map((day) => {
+              const colors = ['bg-blue-500', 'bg-yellow-500', 'bg-green-400', 'bg-red-400', 'bg-purple-400', 'bg-orange-400'];
+              return (
+                <div key={day.day} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className={cn('w-3 h-3 rounded-full', colors[(day.day - 1) % colors.length])} />
+                  Day {day.day}{day.theme ? `: ${day.theme.split('—')[0]?.trim()}` : ''}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Day-wise Itinerary */}
       <div>
         <h3 className="font-display font-bold text-xl mb-4 flex items-center gap-2">
