@@ -325,24 +325,24 @@ export function generateTravelPDF(plan: TravelPlan) {
 
   // ===== TIPS =====
   if (plan.tips && plan.tips.length > 0) {
-    checkPage(20);
+    checkPage(24);
 
-    doc.setFillColor(...colors.cardBg);
-    doc.roundedRect(margin, y - 4, contentWidth, 8, 1, 1, 'F');
-    doc.setFontSize(9);
+    doc.setFillColor(...colors.accent);
+    doc.roundedRect(margin, y - 5, contentWidth, 11, 1.5, 1.5, 'F');
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...colors.accent);
-    doc.text('Travel Tips', margin + 4, y + 1);
-    y += 10;
+    doc.setTextColor(...colors.bgDark);
+    doc.text('Travel Tips', margin + 6, y + 2);
+    y += 14;
 
     for (const tip of plan.tips) {
-      checkPage(10);
-      doc.setFontSize(7);
+      checkPage(12);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textPrimary);
-      const lines = doc.splitTextToSize(`• ${tip}`, contentWidth - 8);
-      doc.text(lines, margin + 4, y);
-      y += lines.length * 4.5 + 2;
+      const lines = doc.splitTextToSize(`• ${tip}`, contentWidth - 12);
+      doc.text(lines, margin + 6, y);
+      y += lines.length * 5 + 3;
     }
   }
 
