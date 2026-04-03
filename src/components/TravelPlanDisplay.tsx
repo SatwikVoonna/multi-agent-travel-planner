@@ -1,5 +1,6 @@
 import { TravelPlan, DayPlan, Activity, MealRecommendation, BudgetBreakdown, AgentDecisions } from '@/types/agent';
 import { cn } from '@/lib/utils';
+import { TravelMap } from '@/components/TravelMap';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -254,6 +255,33 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
         )}
       </div>
 
+      {/* Map Visualization */}
+      {plan.resolvedLocation && (
+        <div className="bg-card rounded-xl p-5 border">
+          <h3 className="font-display font-bold text-xl mb-4 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-primary" />
+            Trip Map — {plan.destination}
+          </h3>
+          <TravelMap
+            destination={plan.destination}
+            lat={plan.resolvedLocation.lat}
+            lon={plan.resolvedLocation.lon}
+            itinerary={plan.itinerary}
+          />
+          <div className="flex flex-wrap gap-3 mt-3">
+            {plan.itinerary.map((day) => {
+              const colors = ['bg-blue-500', 'bg-yellow-500', 'bg-green-400', 'bg-red-400', 'bg-purple-400', 'bg-orange-400'];
+              return (
+                <div key={day.day} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className={cn('w-3 h-3 rounded-full', colors[(day.day - 1) % colors.length])} />
+                  Day {day.day}{day.theme ? `: ${day.theme.split('—')[0]?.trim()}` : ''}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Day-wise Itinerary */}
       <div>
         <h3 className="font-display font-bold text-xl mb-4 flex items-center gap-2">
@@ -276,16 +304,26 @@ export function TravelPlanDisplay({ plan, onReset }: TravelPlanDisplayProps) {
             Agent Decision Summary
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {Object.entries(plan.agentDecisions).map(([agent, decision]) => (
-              decision ? (
-                <div key={agent} className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-sm font-medium capitalize mb-1">
-                    {agent.replace('_', ' ')}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{decision}</p>
+            {[
+              { key: 'weather_agent', icon: '🌤️', label: 'Weather Agent' },
+              { key: 'budget_agent', icon: '💰', label: 'Budget Agent' },
+              { key: 'location_agent', icon: '📍', label: 'Location Agent' },
+              { key: 'itinerary_agent', icon: '📋', label: 'Itinerary Agent' },
+              { key: 'food_agent', icon: '🍽️', label: 'Food Agent' },
+              { key: 'transport_agent', icon: '🚗', label: 'Transport Agent' },
+            ].map(({ key, icon, label }) => {
+              const decision = (plan.agentDecisions as any)?.[key];
+              if (!decision) return null;
+              return (
+                <div key={key} className="bg-muted/50 rounded-lg p-3 border border-border/50">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-lg">{icon}</span>
+                    <p className="text-sm font-semibold">{label}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">→ {decision}</p>
                 </div>
-              ) : null
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

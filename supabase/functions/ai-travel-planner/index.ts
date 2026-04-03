@@ -148,34 +148,27 @@ async function callGemini(systemPrompt: string, userPrompt: string): Promise<str
   return j.choices?.[0]?.message?.content || '';
 }
 
-// Evaluate simple math expressions in JSON values (e.g. "daily_cost": 4 * 100 + 200)
+// Evaluate simple math expressions in JSON values
 function evaluateMathInJson(str: string): string {
-  // Match a colon followed by a math expression (not inside quotes)
-  // This replaces values like: 4 * (100 + 20) + 4 * 400 with the computed number
   return str.replace(
     /:\s*([\d\s\+\-\*\/\(\)\.]+(?:[\+\-\*\/][\d\s\+\-\*\/\(\)\.]+)+)\s*([,\}\]])/g,
     (match, expr, ending) => {
       try {
-        // Only evaluate if it contains math operators and looks like a math expression
         if (/[+\-*/]/.test(expr) && /\d/.test(expr)) {
           const result = Function(`"use strict"; return (${expr.trim()})`)();
           if (typeof result === 'number' && isFinite(result)) {
             return `: ${result}${ending}`;
           }
         }
-      } catch (_) { /* leave as-is if eval fails */ }
+      } catch (_) { /* leave as-is */ }
       return match;
     }
   );
 }
 
-// Sanitize control characters and fix common JSON issues inside string values
 function sanitizeJsonString(str: string): string {
-  // First evaluate any math expressions
   let s = evaluateMathInJson(str);
-  // Remove control characters except \n \r \t
   s = s.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
-  // Fix unescaped newlines inside JSON string values by processing character by character
   let result = '';
   let inString = false;
   let escaped = false;
@@ -192,76 +185,48 @@ function sanitizeJsonString(str: string): string {
   return result;
 }
 
-// Robust JSON parsing with truncation recovery
 function parseJSON(content: string): any {
-  // Strip markdown code blocks
   let cleaned = content
     .replace(/```json\s*/gi, '')
     .replace(/```\s*/g, '')
     .trim();
 
-  // Sanitize
   cleaned = sanitizeJsonString(cleaned);
 
-  // Try direct parse first
   try { return JSON.parse(cleaned); } catch (e) {
-    // Log the exact failure location
     const msg = (e as Error).message;
     const posMatch = msg.match(/position (\d+)/);
     if (posMatch) {
       const pos = parseInt(posMatch[1]);
       const context = cleaned.substring(Math.max(0, pos - 80), pos + 80);
-      const charCodes = [];
-      for (let i = Math.max(0, pos - 5); i < Math.min(cleaned.length, pos + 5); i++) {
-        charCodes.push(`${i}:${cleaned.charCodeAt(i)}('${cleaned[i]}')`);
-      }
       console.error(`[JSON] Parse fail at pos ${pos}. Context: ...${context}...`);
-      console.error(`[JSON] Char codes around failure: ${charCodes.join(', ')}`);
     }
   }
 
-  // Extract JSON object between first { and last }
   const objStart = cleaned.indexOf('{');
   const objEnd = cleaned.lastIndexOf('}');
   if (objStart !== -1 && objEnd > objStart) {
     let slice = cleaned.substring(objStart, objEnd + 1);
-    
-    // Fix trailing commas
     slice = slice.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
     try { return JSON.parse(slice); } catch (_) { /* continue */ }
   }
 
-  // Truncation recovery: response was cut off, missing closing braces
   if (objStart !== -1) {
     let candidate = cleaned.substring(objStart);
-    
-    // Find the last properly closed value (ends with a quote, number, bool, ], or })
-    // by looking for the last line that has a complete JSON value
-    const lastGoodEnding = candidate.search(/[\"\d\]\}](,)?\s*$/m);
-    
-    // Strategy: trim trailing incomplete key-value pairs
-    // Find last occurrence of a complete value followed by potential comma
     const patterns = [
-      /,\s*"[^"]*"\s*:\s*"[^"]*$/, // incomplete string value
-      /,\s*"[^"]*"\s*:\s*$/, // key with no value  
-      /,\s*"[^"]*"\s*:\s*\[?\s*$/, // key with opening bracket only
-      /,\s*"[^"]*$/, // incomplete key
+      /,\s*"[^"]*"\s*:\s*"[^"]*$/,
+      /,\s*"[^"]*"\s*:\s*$/,
+      /,\s*"[^"]*"\s*:\s*\[?\s*$/,
+      /,\s*"[^"]*$/,
     ];
-    
     for (const pattern of patterns) {
       candidate = candidate.replace(pattern, '');
     }
-    
-    // Remove any trailing comma
     candidate = candidate.replace(/,\s*$/, '');
-    
-    // Count unclosed brackets and braces, then close them
     const openBrackets = (candidate.match(/\[/g) || []).length - (candidate.match(/\]/g) || []).length;
     const openBraces = (candidate.match(/\{/g) || []).length - (candidate.match(/\}/g) || []).length;
-    
     for (let i = 0; i < openBrackets; i++) candidate += ']';
     for (let i = 0; i < openBraces; i++) candidate += '}';
-
     candidate = candidate.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
 
     try {
@@ -269,20 +234,14 @@ function parseJSON(content: string): any {
       console.warn(`Recovered JSON from truncated response (closed ${openBraces} braces, ${openBrackets} brackets)`);
       return result;
     } catch (e) {
-      // Last resort: try to find and close at a known good boundary
-      // Look backwards for last complete "}" that could be an object end
       console.error('Recovery attempt 1 failed:', (e as Error).message);
-      
-      // Try more aggressive trimming — cut back to last complete object in an array
       let lastTry = cleaned.substring(objStart);
-      // Find last complete } before any truncation
       let braceCount = 0;
       let lastBalancedPos = -1;
       for (let i = 0; i < lastTry.length; i++) {
         if (lastTry[i] === '{') braceCount++;
         if (lastTry[i] === '}') { braceCount--; if (braceCount === 0) lastBalancedPos = i; }
       }
-      
       if (lastBalancedPos > 0) {
         const trimmed = lastTry.substring(0, lastBalancedPos + 1);
         try {
@@ -291,7 +250,6 @@ function parseJSON(content: string): any {
           return result;
         } catch (_) { /* give up */ }
       }
-      
       console.error('All recovery attempts failed. First 500 chars:', candidate.substring(0, 500));
     }
   }
@@ -315,17 +273,25 @@ async function generateCompletePlan(
 ): Promise<any> {
   console.log(`[Plan] Generating complete plan via Gemini...`);
 
-  const weatherSummary = weather.map(w => `${w.date}: ${w.condition} ${w.temperature}°C (${w.suitable ? 'outdoor OK' : 'prefer indoor'})`).join('\n');
+  const weatherSummary = weather.map(w => `${w.date}: ${w.condition} ${w.temperature}°C (${w.suitable ? 'outdoor OK' : 'RAIN/STORM — prefer indoor'})`).join('\n');
 
-  const system = `You are an expert Indian travel planner AI. You know REAL tourist places, restaurants, hotels across India. You MUST return ONLY valid JSON — no markdown, no explanation, no text before or after the JSON.`;
+  const system = `You are an expert Indian travel planner AI. You know REAL tourist places, restaurants, hotels across India. You MUST return ONLY valid JSON — no markdown, no explanation, no text before or after the JSON.
+
+CORE PRINCIPLES:
+1. ONLY use real, specific place names — NEVER "Beach Visit", "City Tour", "Local Market"
+2. Group nearby attractions on the same day (within 10-15 km radius)
+3. If weather is rainy, SWAP outdoor activities with indoor ones (museums, temples, markets, malls)
+4. If total cost > budget, you MUST auto-optimize: downgrade transport, pick cheaper hotel, replace paid attractions with free ones
+5. Every activity gets a specific time slot (e.g. "9:00 AM", "11:30 AM")
+6. Include travel distance and time between consecutive activities`;
 
   const prompt = `Create a COMPLETE ${duration}-day travel plan for "${destination}" (${location.city}, ${location.state}).
 
 TRAVELER INFO:
-- Number of travelers: ${travelers} person(s)
+- Travelers: ${travelers} person(s)
 - Total budget: ₹${budget} for ALL ${travelers} person(s) combined
 - Budget per person: ₹${Math.round(budget / travelers)}
-- Accommodation preference: ${preferences.accommodation}
+- Accommodation: ${preferences.accommodation}
 - Transport preference: ${preferences.transportMode}
 - Pace: ${preferences.pace}
 - Interests: ${preferences.activities.join(', ')}
@@ -334,37 +300,49 @@ TRAVELER INFO:
 WEATHER FORECAST:
 ${weatherSummary}
 
-INSTRUCTIONS:
-1. Pick 10-15 REAL tourist attractions in ${destination} (use proper names like "Baga Beach", "Fort Aguada", NOT generic "Beach Visit")
-2. Group attractions by geographic proximity — nearby places on the same day
-3. Each day: 2-4 attractions + 1 lunch restaurant + 1 dinner restaurant (all REAL names)
-4. Add specific time slots (9:00 AM, 11:30 AM, etc.)
-5. On rainy days: prioritize museums, markets, temples, indoor cultural sites
-6. On clear days: prioritize beaches, nature, viewpoints, outdoor activities
-7. Include travel time between consecutive attractions
-8. Choose transport: flight if >700km from origin, train if 200-700km, bus/car if <200km
-9. Choose 1 hotel matching the budget tier from 3 options
-10. If total cost exceeds budget, optimize: cheaper transport, cheaper hotel, free attractions, budget restaurants
-11. Calculate ALL costs accurately for ${travelers} person(s)
+PLANNING RULES:
+
+1. PLACE DISCOVERY: Pick 10-15 REAL tourist attractions in ${destination} with proper names (e.g. "Baga Beach", "Fort Aguada", "Basilica of Bom Jesus")
+2. SMART CLUSTERING: Group attractions by geographic proximity:
+   - Same-day places must be within ~10-15 km of each other
+   - Create logical area groupings (e.g. Day 1→Panaji, Day 2→Old Goa, Day 3→North Goa beaches)
+   - Avoid unrealistic long travel within a single day
+3. TIME SCHEDULING: Every activity must have a specific time slot:
+   - Start from 9:00 AM each day
+   - Include realistic gaps for travel between places
+   - Lunch around 1:00-2:00 PM, Dinner around 7:30-8:30 PM
+4. TRAVEL BETWEEN PLACES: For every transition include distance_km, travel_time, and transport mode
+5. WEATHER RESCHEDULING:
+   - On rainy/stormy days: SWAP outdoor activities (beaches, nature walks, viewpoints) with indoor ones (museums, temples, markets, cultural centers)
+   - Clearly note in weather.recommendation what was changed and why
+6. FOOD INTEGRATION: Each day must include lunch + dinner with REAL restaurant names, cuisine type, famous dish, cost per person
+7. TRANSPORT: flight if >700km from origin, train if 200-700km, bus/car if <200km
+8. ACCOMMODATION: Choose 1 hotel matching budget tier, provide 2 alternatives
 
 CRITICAL BUDGET RULES:
-- ALL prices must account for ${travelers} person(s)
+- ALL prices for ${travelers} person(s)
 - Transport "price" = ONE-WAY cost for ALL ${travelers} person(s) combined
 - Transport "round_trip_cost" = price × 2
-- Hotel "price_per_night" = cost per room (assuming 2 people per room, book ${Math.ceil(travelers / 2)} room(s))
+- Hotel "price_per_night" = per room (2 ppl/room, book ${Math.ceil(travelers / 2)} room(s))
 - Hotel "total_cost" = price_per_night × ${duration - 1} night(s) × ${Math.ceil(travelers / 2)} room(s)
-- Food costs = per-person meal price × ${travelers} person(s)
-- Activity entry fees = per-person cost × ${travelers} person(s)
-- The TOTAL of all costs must not exceed ₹${budget}
+- Food costs = per-person × ${travelers}
+- Activity fees = per-person × ${travelers}
+- TOTAL must not exceed ₹${budget}
+
+AUTOMATIC BUDGET CORRECTION (MANDATORY if total > budget):
+If the total cost exceeds ₹${budget}, you MUST fix it:
+1. Switch transport: flight → train (suggest real train name), train → bus
+2. Choose cheaper accommodation from alternatives
+3. Replace expensive activities with free alternatives (parks, beaches, temples)
+4. Choose budget restaurants
+5. Set budget_optimization.applied = true
+6. List ALL changes made in budget_optimization.changes
+7. Set budget_optimization.saved to the amount saved
+8. Final budget_status MUST be "approved" or "warning" (never "exceeded" if optimization is possible)
 
 TRANSPORT RULES:
-- "price" = ONE-WAY cost for ALL ${travelers} person(s)
-- "round_trip_cost" MUST equal exactly price × 2 (no surcharges, no rounding up)
-- If total trip cost (transport + hotel + activities + food) exceeds budget by more than 10%, you MUST downgrade transport:
-  * Switch flight → train (suggest a specific popular train like Rajdhani Express, Shatabdi Express, Duronto Express, Garib Rath, Jan Shatabdi, or the best-known train on that route)
-  * Switch train → bus (suggest Volvo AC sleeper or state transport)
-  * Show the savings from the downgrade in budget_optimization
-- When suggesting train: use a REAL train name that operates on the route (e.g. "Goa Express 12779", "Kerala Express 12625", "Rajdhani Express")
+- If suggesting train: use REAL train name (e.g. "Goa Express 12779", "Rajdhani Express")
+- "round_trip_cost" MUST equal exactly price × 2
 
 Return this EXACT JSON structure:
 {
@@ -396,7 +374,7 @@ Return this EXACT JSON structure:
     {
       "day": 1,
       "date": "${weather[0]?.date || ''}",
-      "theme": "Area Name - Day Theme",
+      "theme": "Area Name — Day Theme",
       "weather": {
         "condition": "Clear",
         "temperature": 30,
@@ -449,34 +427,37 @@ Return this EXACT JSON structure:
     "miscellaneous": 1500,
     "total": 30000
   },
-  "budget_status": "approved|warning|exceeded",
+  "budget_status": "approved|warning",
   "budget_optimization": {
-    "applied": false,
-    "changes": [],
-    "saved": 0
+    "applied": true,
+    "changes": [
+      "Switched from flight to train (Goa Express 12779) — saved ₹4000",
+      "Chose Hotel Mandovi instead of Taj — saved ₹3000",
+      "Replaced Scuba Diving with free beach walk — saved ₹2000"
+    ],
+    "saved": 9000
   },
   "weather_status": "suitable|partially-suitable",
   "agent_decisions": {
-    "weather_agent": "Explanation of weather-based decisions",
-    "budget_agent": "Explanation of budget decisions and any optimizations",
-    "location_agent": "How places were selected and clustered",
-    "itinerary_agent": "How the schedule was organized",
-    "food_agent": "How restaurants were chosen",
-    "transport_agent": "Why this transport mode was selected"
+    "weather_agent": "Clear weather on Days 1-2: outdoor activities selected. Rain on Day 3: swapped beach activities with museum visits",
+    "budget_agent": "Total cost was ₹35000, exceeded budget by ₹5000. Switched flight→train, chose budget hotel. Final cost: ₹28000 (approved)",
+    "location_agent": "Selected top-rated attractions within 15km radius per day. Day 1: Panaji cluster, Day 2: Old Goa cluster",
+    "itinerary_agent": "Grouped locations by proximity. Added 30-min buffer between activities for travel",
+    "food_agent": "Selected restaurants near day's attractions. Mix of local cuisine and popular eateries",
+    "transport_agent": "Distance Delhi→Goa is 590km. Selected train as budget-friendly option over flight"
   },
   "tips": ["3-5 practical tips"]
 }
 
-CRITICAL RULES:
-- EVERY place name must be a REAL, specific place (never "Beach Visit" or "City Tour")
-- EVERY restaurant must be a real or realistic restaurant name for ${destination}
-- ALL costs in INR
-- ALL numeric values MUST be pre-computed numbers (e.g. 4800), NEVER math expressions (e.g. 4 * 1200). No formulas, no calculations, no multiplication in the JSON.
+CRITICAL:
+- EVERY place name must be REAL and specific (never generic)
+- EVERY restaurant must be a real or realistic name for ${destination}
+- ALL costs in INR, ALL numeric values MUST be pre-computed numbers (NEVER math expressions like 4*1200)
 - daily_cost = sum of activity costs + lunch + dinner for ${travelers} person(s) — write the FINAL NUMBER
-- budget_breakdown.total MUST equal the sum of all sub-categories — write the FINAL NUMBER
-- total_cost for accommodation must be a single number, not a formula
-- If total > ₹${budget}: set budget_status to "exceeded" and fill budget_optimization with changes you'd make
-- Return ONLY the JSON object, nothing else`;
+- budget_breakdown.total MUST equal the sum of all sub-categories
+- If total > ₹${budget}: you MUST optimize and set budget_status to "approved" or "warning"
+- agent_decisions MUST describe SPECIFIC decisions made, not generic text
+- Return ONLY the JSON object`;
 
   let plan: any;
   let lastError: Error | null = null;
@@ -506,10 +487,24 @@ CRITICAL RULES:
     throw new Error('Generated plan has no daily_plan');
   }
 
-  // Ensure every day has activities
   for (const day of plan.daily_plan) {
     if (!day.activities || day.activities.length === 0) {
       throw new Error(`Day ${day.day} has no activities`);
+    }
+  }
+
+  // POST-PROCESSING: Auto-correct budget if AI still returned "exceeded"
+  const bb = plan.budget_breakdown || {};
+  const totalCost = bb.total || 0;
+  if (totalCost > budget && plan.budget_status === 'exceeded') {
+    // Force status to warning if within 15% over
+    const overagePercent = ((totalCost - budget) / budget) * 100;
+    if (overagePercent <= 15) {
+      plan.budget_status = 'warning';
+      if (!plan.budget_optimization) {
+        plan.budget_optimization = { applied: false, changes: [], saved: 0 };
+      }
+      plan.budget_optimization.changes.push(`Budget is ${Math.round(overagePercent)}% over — consider minor adjustments`);
     }
   }
 

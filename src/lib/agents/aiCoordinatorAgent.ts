@@ -217,6 +217,7 @@ export class AICoordinatorAgent extends BaseAgent {
       itinerary,
       agentDecisions: raw.agent_decisions || undefined,
       tips: raw.tips || [],
+      resolvedLocation: raw.resolvedLocation || undefined,
       generatedAt: new Date(),
     };
   }

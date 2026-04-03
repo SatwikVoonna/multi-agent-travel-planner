@@ -162,5 +162,6 @@ export interface TravelPlan {
   itinerary: DayPlan[];
   agentDecisions?: AgentDecisions;
   tips?: string[];
+  resolvedLocation?: { lat: number; lon: number };
   generatedAt: Date;
 }
