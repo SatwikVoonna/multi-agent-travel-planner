@@ -1,5 +1,6 @@
 import { TravelPlan, DayPlan, Activity, MealRecommendation, BudgetBreakdown, AgentDecisions } from '@/types/agent';
 import { cn } from '@/lib/utils';
+import { TravelMap } from '@/components/TravelMap';
 import { 
   CheckCircle2, 
   AlertTriangle, 
