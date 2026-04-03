@@ -158,8 +158,9 @@ export function generateTravelPDF(plan: TravelPlan) {
 
   for (const day of plan.itinerary) {
     const activityLines = day.activities.length;
+    const travelLines = day.activities.filter((a, i) => i > 0 && a.travelFromPrevious?.travelTime).length;
     const mealLines = (day.meals?.lunch ? 1 : 0) + (day.meals?.dinner ? 1 : 0);
-    const neededHeight = 22 + (activityLines + mealLines) * 10 + 10;
+    const neededHeight = 24 + (activityLines * 10) + (travelLines * 6) + (mealLines * 10) + 12;
 
     checkPage(neededHeight);
 
@@ -175,7 +176,7 @@ export function generateTravelPDF(plan: TravelPlan) {
     doc.roundedRect(tabX, blockStartY, tabWidth, neededHeight - 2, 2, 2, 'F');
 
     // Day label (rotated & centered)
-    doc.setFontSize(13);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.bgDark);
     const dayLabel = `DAY ${day.day}`;
@@ -183,41 +184,53 @@ export function generateTravelPDF(plan: TravelPlan) {
     const tabCenterY = blockStartY + (neededHeight - 2) / 2;
     doc.text(dayLabel, tabCenterX, tabCenterY, { align: 'center', angle: 90 });
 
-    // Activity header
+    // Activity header + theme
     let ay = blockStartY + 8;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.textPrimary);
-    doc.text('Time', contentX + 6, ay);
-    doc.text('Activity', contentX + 30, ay);
+    doc.text('Time', contentX + 8, ay);
+    doc.text('Activity', contentX + 32, ay);
 
     // Weather + date info
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...colors.textMuted);
-    doc.text(`${day.date}  •  ${day.weather.temperature}°C, ${day.weather.condition}`, contentX + 70, ay);
+    const weatherInfo = `${day.date}  •  ${day.weather.temperature}°C, ${day.weather.condition}`;
+    doc.text(weatherInfo, contentX + 72, ay);
 
     ay += 5;
 
     doc.setDrawColor(...colors.separator);
     doc.setLineWidth(0.3);
-    doc.line(contentX + 6, ay, cardRight - 8, ay);
+    doc.line(contentX + 8, ay, cardRight - innerPad, ay);
 
     ay += 7;
 
-    // Activities
-    for (const act of day.activities) {
+    // Activities with travel distances
+    for (let i = 0; i < day.activities.length; i++) {
+      const act = day.activities[i];
+
+      // Travel distance indicator (between activities)
+      if (i > 0 && act.travelFromPrevious?.travelTime) {
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...colors.textMuted);
+        const travelStr = `↓ ${act.travelFromPrevious.distanceKm}km • ${act.travelFromPrevious.travelTime} by ${act.travelFromPrevious.mode}`;
+        doc.text(travelStr, contentX + 32, ay);
+        ay += 5;
+      }
+
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
 
       doc.setTextColor(...colors.textMuted);
       const timeStr = act.timeSlot || '—';
-      doc.text(timeStr, contentX + 6, ay);
+      doc.text(timeStr, contentX + 8, ay);
 
       doc.setTextColor(...colors.textPrimary);
-      const actName = act.name;
-      const truncatedName = doc.splitTextToSize(actName, actContentWidth - 60);
-      doc.text(truncatedName[0], contentX + 30, ay);
+      const truncatedName = doc.splitTextToSize(act.name, actContentWidth - 65);
+      doc.text(truncatedName[0], contentX + 32, ay);
 
       const costStr = act.cost === 0 ? 'Free' : `₹${act.cost.toLocaleString()}`;
       doc.setTextColor(...tabColor);
@@ -232,10 +245,10 @@ export function generateTravelPDF(plan: TravelPlan) {
       doc.setFontSize(9);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(...colors.textMuted);
-      doc.text('Lunch', contentX + 6, ay);
+      doc.text('Lunch', contentX + 8, ay);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textPrimary);
-      doc.text(`${day.meals.lunch.name} (${day.meals.lunch.cuisine})`, contentX + 30, ay);
+      doc.text(`${day.meals.lunch.name} (${day.meals.lunch.cuisine})`, contentX + 32, ay);
       doc.setTextColor(...colors.accentGold);
       doc.setFont('helvetica', 'bold');
       doc.text(`₹${day.meals.lunch.costPerPerson}`, priceRightX, ay, { align: 'right' });
@@ -245,17 +258,28 @@ export function generateTravelPDF(plan: TravelPlan) {
       doc.setFontSize(9);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(...colors.textMuted);
-      doc.text('Dinner', contentX + 6, ay);
+      doc.text('Dinner', contentX + 8, ay);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textPrimary);
-      doc.text(`${day.meals.dinner.name} (${day.meals.dinner.cuisine})`, contentX + 30, ay);
+      doc.text(`${day.meals.dinner.name} (${day.meals.dinner.cuisine})`, contentX + 32, ay);
       doc.setTextColor(...colors.accentGold);
       doc.setFont('helvetica', 'bold');
       doc.text(`₹${day.meals.dinner.costPerPerson}`, priceRightX, ay, { align: 'right' });
       ay += 9;
     }
 
-    y = ay + 6;
+    // Day total
+    doc.setDrawColor(...colors.separator);
+    doc.setLineWidth(0.2);
+    doc.line(contentX + 8, ay - 2, cardRight - innerPad, ay - 2);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...colors.textSecondary);
+    doc.text('Day Total', contentX + 8, ay + 3);
+    doc.setTextColor(...colors.accentGold);
+    doc.text(`₹${day.totalCost.toLocaleString()}`, priceRightX, ay + 3, { align: 'right' });
+
+    y = ay + 10;
   }
 
   // ===== COST BREAKDOWN =====
