@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { TravelPlan } from '@/types/agent';
 
 const colors = {
