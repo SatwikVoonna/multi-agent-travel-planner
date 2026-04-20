@@ -81,12 +81,19 @@ const Index = () => {
               Powered by Gemini AI + 6 Agents
             </div>
             <h2
-              className="font-display text-2xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-[#F9FAFB] dark:font-bold mb-3 sm:mb-4 animate-fade-in dark:[text-shadow:0_4px_20px_rgba(59,130,246,0.2)]"
+              className="font-display text-2xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-[#F9FAFB] mb-3 sm:mb-4 animate-fade-in"
+              style={theme === 'dark' ? { textShadow: '0 4px 20px rgba(59, 130, 246, 0.2)', fontWeight: 700 } : undefined}
             >
               Your AI Travel Planning
               <span
-                className="bg-clip-text text-transparent dark:[background-image:linear-gradient(90deg,#3B82F6,#8B5CF6)]"
-                style={{ backgroundImage: 'var(--gradient-hero)', WebkitBackgroundClip: 'text' }}
+                className="bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: theme === 'dark'
+                    ? 'linear-gradient(90deg, #3B82F6, #8B5CF6)'
+                    : 'var(--gradient-hero)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
               > Dream Team</span>
             </h2>
             <p className="text-sm sm:text-lg text-muted-foreground dark:text-[#D1D5DB] max-w-2xl mx-auto mb-6 sm:mb-8 animate-fade-in" style={{ animationDelay: '100ms' }}>
