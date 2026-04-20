@@ -75,65 +75,65 @@
   }
 
   .dark {
-    /* Sunset palette: #20212B bg, #2D4354 blue, #73766A sage, #FED7A5 cream, #9E6752 terracotta, #534145 mauve */
-    --background: 232 13% 15%;
-    --foreground: 32 95% 82%;
+    /* Slate Navy palette: #0E141B, #11212D, #4A5C6A, #9BA8AB, #BFAFB6, #CCD0CF */
+    --background: 213 31% 8%;
+    --foreground: 195 8% 81%;
 
-    --card: 210 31% 25%;
-    --card-foreground: 32 95% 88%;
+    --card: 204 44% 12%;
+    --card-foreground: 195 8% 85%;
 
-    --popover: 232 13% 18%;
-    --popover-foreground: 32 95% 88%;
+    --popover: 204 44% 12%;
+    --popover-foreground: 195 8% 85%;
 
-    --primary: 27 30% 47%;
-    --primary-foreground: 32 95% 95%;
+    --primary: 200 16% 35%;
+    --primary-foreground: 195 8% 90%;
 
-    --secondary: 348 8% 30%;
-    --secondary-foreground: 32 95% 88%;
+    --secondary: 204 30% 18%;
+    --secondary-foreground: 195 8% 85%;
 
-    --muted: 348 8% 28%;
-    --muted-foreground: 67 5% 65%;
+    --muted: 204 25% 20%;
+    --muted-foreground: 200 10% 64%;
 
-    --accent: 32 95% 82%;
-    --accent-foreground: 232 13% 15%;
+    --accent: 195 8% 65%;
+    --accent-foreground: 213 31% 8%;
 
-    --success: 67 5% 50%;
-    --success-foreground: 32 95% 95%;
+    --success: 200 16% 50%;
+    --success-foreground: 195 8% 95%;
 
-    --warning: 32 95% 75%;
-    --warning-foreground: 232 13% 15%;
+    --warning: 340 14% 72%;
+    --warning-foreground: 213 31% 8%;
 
-    --destructive: 12 32% 47%;
-    --destructive-foreground: 32 95% 95%;
+    --destructive: 0 50% 45%;
+    --destructive-foreground: 195 8% 95%;
 
-    --border: 210 25% 30%;
-    --input: 210 25% 30%;
-    --ring: 27 30% 47%;
+    --border: 200 16% 25%;
+    --input: 200 16% 25%;
+    --ring: 200 16% 50%;
 
-    /* Agent colors retuned for sunset palette */
-    --agent-user: 210 31% 45%;
-    --agent-budget: 67 8% 55%;
-    --agent-weather: 32 95% 75%;
-    --agent-hotel: 348 10% 45%;
-    --agent-transport: 12 32% 50%;
-    --agent-itinerary: 27 35% 55%;
-    --agent-coordinator: 210 31% 50%;
+    /* Agent colors */
+    --agent-user: 200 16% 50%;
+    --agent-budget: 195 8% 65%;
+    --agent-weather: 340 14% 72%;
+    --agent-hotel: 200 16% 45%;
+    --agent-transport: 204 30% 35%;
+    --agent-itinerary: 200 12% 55%;
+    --agent-coordinator: 204 44% 30%;
 
-    /* Sunset gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(232 13% 15%) 0%, hsl(348 8% 30%) 30%, hsl(12 32% 47%) 60%, hsl(32 95% 75%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(210 31% 22%) 0%, hsl(232 13% 17%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(12 32% 47%) 0%, hsl(32 95% 75%) 100%);
+    /* Slate gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(213 31% 8%) 0%, hsl(204 44% 14%) 40%, hsl(200 16% 35%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(204 44% 14%) 0%, hsl(213 31% 10%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(200 16% 35%) 0%, hsl(195 8% 65%) 100%);
 
-    --shadow-glow: 0 0 40px -10px hsl(32 95% 75% / 0.35);
+    --shadow-glow: 0 0 40px -10px hsl(195 8% 65% / 0.3);
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 213 31% 8%;
+    --sidebar-foreground: 195 8% 81%;
+    --sidebar-primary: 200 16% 35%;
+    --sidebar-primary-foreground: 195 8% 95%;
+    --sidebar-accent: 204 30% 18%;
+    --sidebar-accent-foreground: 195 8% 85%;
+    --sidebar-border: 200 16% 22%;
+    --sidebar-ring: 200 16% 50%;
   }
 }
 
