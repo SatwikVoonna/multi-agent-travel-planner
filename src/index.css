@@ -6,62 +6,63 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 25% 10%;
+    /* Sunset palette - light mode: cream bg with terracotta/navy accents */
+    --background: 32 95% 95%;
+    --foreground: 232 13% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card: 32 95% 97%;
+    --card-foreground: 232 13% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover: 32 95% 97%;
+    --popover-foreground: 232 13% 15%;
 
-    --primary: 210 85% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 210 31% 25%;
+    --primary-foreground: 32 95% 95%;
 
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 220 25% 20%;
+    --secondary: 32 80% 88%;
+    --secondary-foreground: 232 13% 20%;
 
-    --muted: 210 15% 94%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 32 60% 90%;
+    --muted-foreground: 348 8% 40%;
 
-    --accent: 15 90% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 12 32% 47%;
+    --accent-foreground: 32 95% 95%;
 
-    --success: 155 70% 40%;
-    --success-foreground: 0 0% 100%;
+    --success: 67 15% 45%;
+    --success-foreground: 32 95% 95%;
 
-    --warning: 38 95% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 27 50% 55%;
+    --warning-foreground: 32 95% 95%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 12 50% 45%;
+    --destructive-foreground: 32 95% 95%;
 
-    --border: 210 20% 90%;
-    --input: 210 20% 90%;
-    --ring: 210 85% 45%;
+    --border: 32 40% 82%;
+    --input: 32 40% 82%;
+    --ring: 210 31% 25%;
 
     --radius: 0.75rem;
 
-    /* Agent colors */
-    --agent-user: 210 85% 50%;
-    --agent-budget: 155 70% 40%;
-    --agent-weather: 38 95% 50%;
-    --agent-hotel: 280 70% 55%;
-    --agent-transport: 340 75% 55%;
-    --agent-itinerary: 15 90% 55%;
-    --agent-coordinator: 220 90% 55%;
+    /* Agent colors - sunset tuned */
+    --agent-user: 210 31% 35%;
+    --agent-budget: 67 15% 45%;
+    --agent-weather: 32 80% 60%;
+    --agent-hotel: 348 12% 40%;
+    --agent-transport: 12 40% 50%;
+    --agent-itinerary: 27 45% 50%;
+    --agent-coordinator: 210 31% 35%;
 
-    /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(210 85% 45%) 0%, hsl(220 90% 55%) 50%, hsl(280 70% 55%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 20% 98%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(15 90% 60%) 0%, hsl(38 95% 55%) 100%);
+    /* Sunset gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(210 31% 25%) 0%, hsl(348 8% 35%) 30%, hsl(12 32% 47%) 65%, hsl(32 95% 75%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(32 95% 97%) 0%, hsl(32 80% 92%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(12 32% 47%) 0%, hsl(32 95% 70%) 100%);
 
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    --shadow-glow: 0 0 40px -10px hsl(210 85% 45% / 0.3);
+    --shadow-glow: 0 0 40px -10px hsl(12 32% 47% / 0.35);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
