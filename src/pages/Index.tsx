@@ -88,9 +88,7 @@ const Index = () => {
               <span
                 className="bg-clip-text text-transparent"
                 style={{
-                  backgroundImage: theme === 'dark'
-                    ? 'linear-gradient(90deg, #3B82F6, #8B5CF6)'
-                    : 'var(--gradient-hero)',
+                  backgroundImage: 'linear-gradient(140deg, rgba(33, 33, 94, 1) 0%, rgba(128, 128, 128, 1) 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}
